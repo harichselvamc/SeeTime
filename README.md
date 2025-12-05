@@ -1,8 +1,19 @@
-See Time
+## See Time
 
 A simple Kotlin Android app that lets users check and convert time between any IANA time zones.
 The app uses TimeAPI.io to fetch accurate timezone and DST data once per day, then stores it locally so all conversions work instantly without repeated API calls.
 Built with Android Studio and tested on a Motorola Edge 50 Pro.
+
+
+## Download
+
+To try the app:
+
+1. Open the **Releases** section of this repository.
+2. Select the latest version (for example: `v1.0.0`).
+3. Download the attached `.apk` file (usually named `app-debug.apk`).
+4. Install it on your Android device. You may need to allow installation from unknown sources.
+
 
 Screenshots
 
