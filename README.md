@@ -25,6 +25,11 @@ Built with Android Studio and tested on a Motorola Edge 50 Pro.
 
 Found a bug or have a feature request? Open an [issue](https://github.com/harichselvamc/SeeTime/issues), use the "Report an issue" shortcut/setting in the app, or email harichselvamc@gmail.com.
 
+## Legal
+
+- [Privacy Policy](https://harichselvamc.github.io/SeeTime/privacy.html) — See Time collects no personal data; everything stays on your device.
+- [Terms & Conditions](https://harichselvamc.github.io/SeeTime/terms.html)
+
 ## Screenshots
 
 1. Home Screen
