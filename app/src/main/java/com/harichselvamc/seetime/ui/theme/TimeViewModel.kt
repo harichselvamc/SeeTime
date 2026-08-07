@@ -4,14 +4,16 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.harichselvamc.seetime.BuildConfig
+import com.harichselvamc.seetime.data.SettingsRepository
 import com.harichselvamc.seetime.data.TimeRepository
 import com.harichselvamc.seetime.data.local.TimePair
-import com.harichselvamc.seetime.data.local.ZoneCache
+import com.harichselvamc.seetime.util.TimeMath
+import com.harichselvamc.seetime.widget.WidgetUpdater
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 data class TimePairUi(
     val id: Long,
@@ -33,9 +35,20 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         private const val TAG = "TimeViewModel"
+
+        private fun logd(msg: String) {
+            if (BuildConfig.DEBUG) Log.d(TAG, msg)
+        }
     }
 
     private val repo = TimeRepository.getInstance(app)
+    private val settingsRepo = SettingsRepository.getInstance(app)
+
+    val use24HourFormat: StateFlow<Boolean> = settingsRepo.use24HourFormat
+
+    fun setUse24HourFormat(enabled: Boolean) {
+        settingsRepo.setUse24HourFormat(enabled)
+    }
 
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state
@@ -46,13 +59,14 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun load() {
         viewModelScope.launch {
-            Log.d(TAG, "load() called")
+            logd("load() called")
             _state.value = _state.value.copy(isLoading = true)
             try {
                 val pairs = repo.getPairs()
-                Log.d(TAG, "load() pairs count=${pairs.size}")
+                logd("load() pairs count=${pairs.size}")
                 val uiPairs = toUiList(pairs)
                 _state.value = HomeUiState(isLoading = false, pairs = uiPairs)
+                WidgetUpdater.requestUpdate(getApplication())
             } catch (e: Exception) {
                 Log.e(TAG, "load() failed -> ${e.message}", e)
                 _state.value = HomeUiState(isLoading = false, error = e.message)
@@ -62,13 +76,14 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refreshAll() {
         viewModelScope.launch {
-            Log.d(TAG, "refreshAll() called")
+            logd("refreshAll() called")
             _state.value = _state.value.copy(isLoading = true)
             try {
                 repo.refreshAllZones()
                 val pairs = repo.getPairs()
                 val uiPairs = toUiList(pairs)
                 _state.value = HomeUiState(isLoading = false, pairs = uiPairs)
+                WidgetUpdater.requestUpdate(getApplication())
             } catch (e: Exception) {
                 Log.e(TAG, "refreshAll() failed -> ${e.message}", e)
                 _state.value = HomeUiState(isLoading = false, error = e.message)
@@ -78,7 +93,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun addPair(fromZone: String, toZone: String) {
         viewModelScope.launch {
-            Log.d(TAG, "addPair() from=$fromZone to=$toZone")
+            logd("addPair() from=$fromZone to=$toZone")
             repo.addPair(fromZone, toZone)
             repo.refreshAllZones()
             load()
@@ -95,6 +110,15 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
         val item = current.removeAt(fromIndex)
         current.add(toIndex, item)
         _state.value = _state.value.copy(pairs = current)
+
+        // Persist the new order so it survives reload/restart.
+        viewModelScope.launch {
+            try {
+                repo.reorderPairs(current.map { it.id })
+            } catch (e: Exception) {
+                Log.e(TAG, "movePair() failed to persist order -> ${e.message}", e)
+            }
+        }
     }
 
     fun startTicker() {
@@ -102,7 +126,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
         tickerStarted = true
 
         viewModelScope.launch {
-            Log.d(TAG, "startTicker() started")
+            logd("startTicker() started")
             while (true) {
                 try {
                     tickOnce()
@@ -120,7 +144,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
     fun deletePair(id: Long) {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "deletePair() id=$id")
+                logd("deletePair() id=$id")
                 repo.deletePairById(id)
                 load()
             } catch (e: Exception) {
@@ -135,7 +159,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
     fun editPair(id: Long, fromZone: String, toZone: String) {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "editPair() id=$id from=$fromZone to=$toZone")
+                logd("editPair() id=$id from=$fromZone to=$toZone")
                 repo.updatePair(id, fromZone, toZone)
                 repo.refreshAllZones()
                 load()
@@ -150,17 +174,18 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
         val current = _state.value.pairs
         if (current.isEmpty()) return
 
-        Log.d(TAG, "tickOnce() nowUtc=$nowUtc count=${current.size}")
+        logd("tickOnce() nowUtc=$nowUtc count=${current.size}")
+        val use24Hour = use24HourFormat.value
 
         val refreshed = current.map { ui ->
             val fromCache = repo.getZoneCache(ui.fromZone)
             val toCache = repo.getZoneCache(ui.toZone)
 
             ui.copy(
-                displayFromTime = formatDateTime(nowUtc, fromCache),
-                displayToTime = formatDateTime(nowUtc, toCache),
-                diffText = buildDiffText(fromCache, toCache),
-                dstText = buildDstText(fromCache, toCache)
+                displayFromTime = TimeMath.formatDateTime(nowUtc, fromCache, use24Hour),
+                displayToTime = TimeMath.formatDateTime(nowUtc, toCache, use24Hour),
+                diffText = TimeMath.buildDiffText(fromCache, toCache),
+                dstText = TimeMath.buildDstText(fromCache, toCache)
             )
         }
 
@@ -171,14 +196,14 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun toUiList(pairs: List<TimePair>): List<TimePairUi> {
         val nowUtc = System.currentTimeMillis()
-        Log.d(TAG, "toUiList() nowUtc=$nowUtc")
+        logd("toUiList() nowUtc=$nowUtc")
+        val use24Hour = use24HourFormat.value
 
         return pairs.map { pair ->
             val fromCache = repo.getZoneCache(pair.fromZone)
             val toCache = repo.getZoneCache(pair.toZone)
 
-            Log.d(
-                TAG,
+            logd(
                 "toUiList() pair id=${pair.id} ${pair.fromZone} -> ${pair.toZone}, " +
                         "fromCache=${fromCache?.offsetMinutes}, toCache=${toCache?.offsetMinutes}"
             )
@@ -187,115 +212,12 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                 id = pair.id,
                 fromZone = pair.fromZone,
                 toZone = pair.toZone,
-                displayFromTime = formatDateTime(nowUtc, fromCache),
-                displayToTime = formatDateTime(nowUtc, toCache),
-                diffText = buildDiffText(fromCache, toCache),
-                dstText = buildDstText(fromCache, toCache)
+                displayFromTime = TimeMath.formatDateTime(nowUtc, fromCache, use24Hour),
+                displayToTime = TimeMath.formatDateTime(nowUtc, toCache, use24Hour),
+                diffText = TimeMath.buildDiffText(fromCache, toCache),
+                dstText = TimeMath.buildDstText(fromCache, toCache)
             )
         }
     }
 
-    /**
-     * Format **date + time** in 12-hour format:
-     * "dd MMM yyyy, hh:mm:ss AM/PM"
-     * Example: "18 Nov 2025, 06:01:32 PM"
-     */
-    private fun formatDateTime(nowUtc: Long, cache: ZoneCache?): String {
-        if (cache == null) {
-            Log.d(TAG, "formatDateTime() cache=null -> returning '--'")
-            return "--"
-        }
-
-        val millis = nowUtc + cache.offsetMinutes * 60_000L
-        val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
-        cal.timeInMillis = millis
-
-        val year = cal.get(java.util.Calendar.YEAR)
-        val month = cal.get(java.util.Calendar.MONTH) // 0–11
-        val day = cal.get(java.util.Calendar.DAY_OF_MONTH)
-
-        val hour24 = cal.get(java.util.Calendar.HOUR_OF_DAY)
-        val minute = cal.get(java.util.Calendar.MINUTE)
-        val second = cal.get(java.util.Calendar.SECOND)
-
-        val (hour12, amPm) = when {
-            hour24 == 0 -> 12 to "AM"          // 00:xx -> 12 AM
-            hour24 < 12 -> hour24 to "AM"      // 01–11 -> AM
-            hour24 == 12 -> 12 to "PM"         // 12:xx -> 12 PM
-            else -> (hour24 - 12) to "PM"      // 13–23 -> 1–11 PM
-        }
-
-        val monthNames = arrayOf(
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        )
-        val monthName = monthNames[month.coerceIn(0, 11)]
-
-        val result = "%02d %s %04d, %02d:%02d:%02d %s".format(
-            day,
-            monthName,
-            year,
-            hour12,
-            minute,
-            second,
-            amPm
-        )
-
-        Log.d(
-            TAG,
-            "formatDateTime() offset=${cache.offsetMinutes} nowUtc=$nowUtc -> $result"
-        )
-        return result
-    }
-
-    /**
-     * Show time difference including DST as "+H:MM hrs" or "-H:MM hrs".
-     * Example: "Time difference: +1:30 hrs"
-     */
-    private fun buildDiffText(from: ZoneCache?, to: ZoneCache?): String {
-        if (from == null || to == null) {
-            Log.d(TAG, "buildDiffText() missing cache -> from=$from to=$to")
-            return "Time difference: ?"
-        }
-        // offsetMinutes already includes DST if active
-        val diff = to.offsetMinutes - from.offsetMinutes
-        val sign = if (diff >= 0) "+" else "-"
-        val absMin = abs(diff)
-        val h = absMin / 60
-        val m = absMin % 60
-        val text = "Time difference: $sign$h:${m.toString().padStart(2, '0')} hrs"
-        Log.d(TAG, "buildDiffText() from=${from.offsetMinutes} to=${to.offsetMinutes} -> $text")
-        return text
-    }
-
-    /**
-     * Show DST status for each side.
-     * We **don't** use the full offset (which gave you +11:00 hrs),
-     * instead we assume a typical DST shift of +1:00 hr when active.
-     *
-     * Example:
-     *   "From DST: active (+1:00 hrs) | To DST: inactive"
-     */
-    private fun buildDstText(from: ZoneCache?, to: ZoneCache?): String {
-
-        fun formatSide(label: String, cache: ZoneCache?): String {
-            if (cache == null) return "$label DST: ?"
-
-            return when (cache.dstActive) {
-                true -> "$label DST: active (+1:00 hrs)"   // typical DST shift
-                false -> "$label DST: inactive"
-                null -> "$label DST: ?"
-            }
-        }
-
-        val fromPart = formatSide("From", from)
-        val toPart = formatSide("To", to)
-
-        val result = "$fromPart | $toPart"
-        Log.d(
-            TAG,
-            "buildDstText() fromDst=${from?.dstActive} toDst=${to?.dstActive} -> $result"
-        )
-        return result
-    }
 }

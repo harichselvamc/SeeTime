@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">See Time</string>
-    <string name="time_widget_description">See Time widget</string>
+
+    <string name="shortcut_quick_add_short">Add time pair</string>
+    <string name="shortcut_quick_add_long">Quick add a time pair</string>
+
+    <string name="shortcut_report_issue_short">Report issue</string>
+    <string name="shortcut_report_issue_long">Report an issue by email</string>
+
+    <string name="time_widget_description">Shows your first saved time pair on the home screen.</string>
 </resources>

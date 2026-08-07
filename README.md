@@ -1,21 +1,31 @@
 ## See Time
 
 A simple Kotlin Android app that lets users check and convert time between any IANA time zones.
-The app uses TimeAPI.io to fetch accurate timezone and DST data once per day, then stores it locally so all conversions work instantly without repeated API calls.
+All timezone offset and DST data is computed on-device (via the platform's `java.time`/tzdata), stored locally in Room, and refreshed instantly with no network access required.
 Built with Android Studio and tested on a Motorola Edge 50 Pro.
 
+**Website:** [harichselvamc.github.io/SeeTime](https://harichselvamc.github.io/SeeTime/) (project overview, screenshots, download links)
+
+## Features
+
+- Compare and convert time across any IANA time zone, fully offline
+- Accurate DST handling — shows the real delta for each zone, not a guessed +1:00
+- Home screen widget showing your primary time pair
+- Long-press app shortcuts: quick-add a time pair, report an issue
+- 12-hour / 24-hour format toggle in Settings
+- Material You dynamic color + dark theme
+- Drag to reorder, swipe to edit/delete
 
 ## Download
 
-To try the app:
+- **Google Play:** coming soon — [play.google.com/store/apps/details?id=com.harichselvamc.seetime](https://play.google.com/store/apps/details?id=com.harichselvamc.seetime)
+- **GitHub Releases:** grab the signed APK from the [Releases](https://github.com/harichselvamc/SeeTime/releases) section (latest tag, `app-release.apk`). You may need to allow installation from unknown sources.
 
-1. Open the **Releases** section of this repository.
-2. Select the latest version (for example: `v1.0.0`).
-3. Download the attached `.apk` file (usually named `app-debug.apk`).
-4. Install it on your Android device. You may need to allow installation from unknown sources.
+## Feedback
 
+Found a bug or have a feature request? Open an [issue](https://github.com/harichselvamc/SeeTime/issues), use the "Report an issue" shortcut/setting in the app, or email harichselvamc@gmail.com.
 
-Screenshots
+## Screenshots
 
 1. Home Screen
 <img width="250" alt="Home Screen" src="https://github.com/user-attachments/assets/eb4d45af-10c2-4422-8d6c-46c087ac27d8" />

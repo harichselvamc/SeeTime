@@ -1,4 +1,4 @@
-name: Android APK Release
+name: Android Release Build
 
 on:
   push:
@@ -25,12 +25,42 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug
+      - name: Decode upload keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SEETIME_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > keystore/seetime-upload.jks
 
-      - name: Create GitHub Release and upload APK
+      # Signing config is picked up from these env vars by app/build.gradle.kts
+      # when no local keystore.properties file is present (see that file's
+      # signingProp() helper). Add the matching secrets under
+      # Settings -> Secrets and variables -> Actions in this repo.
+      - name: Build signed release APK (for sideloading / GitHub Release)
+        env:
+          SEETIME_KEYSTORE_PATH: keystore/seetime-upload.jks
+          SEETIME_KEYSTORE_PASSWORD: ${{ secrets.SEETIME_KEYSTORE_PASSWORD }}
+          SEETIME_KEY_ALIAS: ${{ secrets.SEETIME_KEY_ALIAS }}
+          SEETIME_KEY_PASSWORD: ${{ secrets.SEETIME_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      - name: Build signed release AAB (for Play Store upload)
+        env:
+          SEETIME_KEYSTORE_PATH: keystore/seetime-upload.jks
+          SEETIME_KEYSTORE_PASSWORD: ${{ secrets.SEETIME_KEYSTORE_PASSWORD }}
+          SEETIME_KEY_ALIAS: ${{ secrets.SEETIME_KEY_ALIAS }}
+          SEETIME_KEY_PASSWORD: ${{ secrets.SEETIME_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
+
+      - name: Upload AAB as build artifact (download and upload to Play Console)
+        uses: actions/upload-artifact@v4
+        with:
+          name: seetime-release-aab
+          path: app/build/outputs/bundle/release/*.aab
+
+      - name: Create GitHub Release and upload signed APK
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

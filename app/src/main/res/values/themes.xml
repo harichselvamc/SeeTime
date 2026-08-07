@@ -2,4 +2,13 @@
 <resources>
 
     <style name="Theme.SeeTime" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Shown for a moment at cold start, before Theme.SeeTime takes over
+         (see MainActivity.installSplashScreen()). -->
+    <style name="Theme.SeeTime.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.SeeTime</item>
+    </style>
+
 </resources>

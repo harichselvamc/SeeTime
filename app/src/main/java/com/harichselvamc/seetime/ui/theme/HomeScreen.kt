@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,11 +48,15 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeScreen(viewModel: TimeViewModel) {
+fun HomeScreen(
+    viewModel: TimeViewModel,
+    startWithAddDialog: Boolean = false,
+    onOpenSettings: () -> Unit = {}
+) {
     val state by viewModel.state.collectAsState()
 
     // Dialog state: null = add, non-null = edit
-    var showDialog by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(startWithAddDialog) }
     var editingPair by remember { mutableStateOf<TimePairUi?>(null) }
 
     // Initial load + start ticking seconds
@@ -69,6 +74,12 @@ fun HomeScreen(viewModel: TimeViewModel) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Refresh"
+                        )
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
                         )
                     }
                 }
