@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="See Time Privacy Policy — the app collects no personal data. Everything is stored locally on your device.">
+  <title>Privacy Policy — See Time</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="See Time home">
+        <svg class="brand-mark" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="See Time logo">
+          <rect width="108" height="108" rx="24" fill="#000000"/>
+          <circle cx="54" cy="54" r="30" fill="none" stroke="#ffffff" stroke-width="6"/>
+          <line x1="54" y1="54" x2="41.9" y2="47" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <line x1="54" y1="54" x2="73.1" y2="43" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="54" cy="54" r="3" fill="#ffffff"/>
+        </svg>
+        <div>
+          <span class="brand-name">See Time</span>
+          <span class="brand-tag">Offline · Private · Free</span>
+        </div>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        Menu
+      </button>
+
+      <nav class="site-nav" id="site-nav" aria-label="Primary">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#privacy">Privacy</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms</a>
+        <a href="https://github.com/harichselvamc/SeeTime" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="mailto:harichselvamc@gmail.com">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="section-heading">
+        <p class="eyebrow">Legal</p>
+        <h1 style="font-size:clamp(2.2rem,5vw,3.2rem); max-width:20ch;">Privacy Policy</h1>
+        <p class="updated">Last updated: August 7, 2026</p>
+      </section>
+
+      <article class="policy">
+        <p>
+          See Time ("the app") is developed and maintained by Harichselvam C ("we", "us").
+          This policy explains, plainly, what happens to your data when you use the app.
+          The short version: <strong>we don't collect any of it.</strong>
+        </p>
+
+        <h2>1. Data we do not collect</h2>
+        <p>See Time does not collect, transmit, sell, or share any personal data, because it has no mechanism to do so:</p>
+        <ul>
+          <li>No account or sign-up of any kind.</li>
+          <li>No analytics, tracking, or advertising SDKs.</li>
+          <li>No crash-reporting service that sends data off your device.</li>
+          <li>
+            No <code>INTERNET</code> permission — the app cannot make a network request even if it
+            wanted to. Every time zone offset and daylight-saving calculation is computed on-device
+            using Android's built-in IANA time zone database.
+          </li>
+        </ul>
+
+        <h2>2. Data stored locally on your device</h2>
+        <p>The app stores the following, only in local app storage on your own device:</p>
+        <ul>
+          <li>The time zone pairs you choose to add (for example, "Asia/Kolkata" → "Europe/London") and the order you arrange them in.</li>
+          <li>Your 12-hour / 24-hour display format preference.</li>
+        </ul>
+        <p>
+          This data never leaves your device through the app. We — the developer — have no access to it,
+          no copy of it, and no way to see it.
+        </p>
+
+        <h2>3. Android system backup</h2>
+        <p>
+          See Time does not implement its own backup or sync. However, like most Android apps, it does not
+          disable the operating system's standard app backup. If you have Android device backup enabled on
+          your phone, your saved time zone pairs and format preference may be included in your device's
+          backup to your own Google Account, the same way as any other app's local data. This is standard
+          Android OS behavior tied to your Google Account, not something See Time itself transmits, accesses,
+          or controls.
+        </p>
+
+        <h2>4. Permissions</h2>
+        <p>
+          See Time requests no runtime permissions (no location, contacts, storage, camera, microphone, or
+          notifications) and declares no internet access in its manifest.
+        </p>
+
+        <h2>5. Children's privacy</h2>
+        <p>
+          See Time is a general-audience utility app and does not knowingly collect data from anyone,
+          including children, because it does not collect data from anyone at all.
+        </p>
+
+        <h2>6. Changes to this policy</h2>
+        <p>
+          If this policy ever changes — for example, if a future version adds an optional feature that
+          does involve data — this page will be updated with a new "Last updated" date, and the change
+          will be described here before it ships in an app update.
+        </p>
+
+        <h2>7. Contact</h2>
+        <p>
+          Questions about this policy or the app can be sent to
+          <a href="mailto:harichselvamc@gmail.com">harichselvamc@gmail.com</a>, or filed as an
+          <a href="https://github.com/harichselvamc/SeeTime/issues" target="_blank" rel="noreferrer">issue on GitHub</a>.
+        </p>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>See Time</strong>
+        <p>Offline first · Private · Built for people working across time zones</p>
+        <p><a href="mailto:harichselvamc@gmail.com">harichselvamc@gmail.com</a></p>
+      </div>
+      <div class="footer-links">
+        <a class="footer-link" href="https://github.com/harichselvamc/SeeTime" target="_blank" rel="noreferrer">github.com/harichselvamc/SeeTime</a>
+        <a class="footer-link" href="privacy.html">Privacy Policy</a>
+        <a class="footer-link" href="terms.html">Terms &amp; Conditions</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,319 +1,226 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>See Time — timezone comparisons, offline</title>
-<meta name="description" content="See Time is a Kotlin/Compose Android app for comparing and converting time across IANA time zones, fully offline.">
-<style>
-  :root {
-    --ink: #111111;
-    --muted: #5b5b5b;
-    --line: #e6e6e6;
-    --bg: #ffffff;
-    --accent: #000000;
-  }
-
-  * { box-sizing: border-box; }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: var(--bg);
-    color: var(--ink);
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .wrap {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-
-  header.hero {
-    padding: 96px 0 64px;
-    text-align: center;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .logo {
-    width: 84px;
-    height: 84px;
-    border-radius: 22px;
-    margin: 0 auto 28px;
-    display: block;
-  }
-
-  h1 {
-    font-size: 40px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 0 0 12px;
-  }
-
-  .tagline {
-    font-size: 19px;
-    color: var(--muted);
-    margin: 0 auto 32px;
-    max-width: 520px;
-  }
-
-  .cta-row {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 22px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 15px;
-    border: 1px solid var(--accent);
-    transition: opacity 0.15s ease;
-  }
-
-  .btn:hover { opacity: 0.75; }
-
-  .btn.primary {
-    background: var(--accent);
-    color: #ffffff;
-  }
-
-  .btn.secondary {
-    background: transparent;
-    color: var(--accent);
-  }
-
-  .badge-img {
-    height: 44px;
-    display: block;
-  }
-
-  section {
-    padding: 64px 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  section:last-of-type { border-bottom: none; }
-
-  h2 {
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin: 0 0 20px;
-    font-weight: 700;
-  }
-
-  .lede {
-    font-size: 18px;
-    max-width: 660px;
-    margin: 0 0 8px;
-  }
-
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 24px;
-    margin-top: 8px;
-  }
-
-  .feature h3 {
-    font-size: 16px;
-    margin: 0 0 6px;
-    font-weight: 700;
-  }
-
-  .feature p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 14.5px;
-  }
-
-  .shots {
-    display: flex;
-    gap: 16px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    margin-top: 8px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .shots img {
-    height: 420px;
-    max-height: 60vh;
-    width: auto;
-    border-radius: 18px;
-    border: 1px solid var(--line);
-    flex: 0 0 auto;
-  }
-
-  .contact-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    gap: 14px;
-  }
-
-  .contact-list a {
-    color: var(--ink);
-    text-decoration: none;
-    font-weight: 600;
-    border-bottom: 1px solid var(--accent);
-  }
-
-  .contact-list span {
-    color: var(--muted);
-    font-size: 14px;
-    display: block;
-    margin-top: 2px;
-  }
-
-  footer {
-    padding: 40px 0 80px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 13.5px;
-  }
-
-  footer a { color: var(--muted); }
-
-  @media (max-width: 560px) {
-    header.hero { padding: 64px 0 48px; }
-    h1 { font-size: 30px; }
-    .tagline { font-size: 17px; }
-    .shots img { height: 320px; }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="See Time is an offline-first Android app for comparing and converting time across any IANA time zone. No account, no ads, no data collected.">
+  <title>See Time — timezone comparisons, offline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<header class="hero">
-  <div class="wrap">
-    <svg class="logo" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="See Time logo">
-      <rect width="108" height="108" fill="#000000"/>
-      <circle cx="54" cy="54" r="30" fill="none" stroke="#ffffff" stroke-width="6"/>
-      <line x1="54" y1="54" x2="41.9" y2="47" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
-      <line x1="54" y1="54" x2="73.1" y2="43" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
-      <circle cx="54" cy="54" r="3" fill="#ffffff"/>
-    </svg>
-
-    <h1>See Time</h1>
-    <p class="tagline">Know what time it is, everywhere that matters — instantly, and fully offline.</p>
-
-    <div class="cta-row">
-      <a class="btn secondary" href="https://github.com/harichselvamc/SeeTime" target="_blank" rel="noopener">
-        View on GitHub
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="See Time home">
+        <svg class="brand-mark" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="See Time logo">
+          <rect width="108" height="108" rx="24" fill="#000000"/>
+          <circle cx="54" cy="54" r="30" fill="none" stroke="#ffffff" stroke-width="6"/>
+          <line x1="54" y1="54" x2="41.9" y2="47" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <line x1="54" y1="54" x2="73.1" y2="43" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="54" cy="54" r="3" fill="#ffffff"/>
+        </svg>
+        <div>
+          <span class="brand-name">See Time</span>
+          <span class="brand-tag">Offline · Private · Free</span>
+        </div>
       </a>
-      <a class="btn secondary" href="https://github.com/harichselvamc/SeeTime/releases" target="_blank" rel="noopener">
-        Download APK
-      </a>
-      <a href="https://play.google.com/store/apps/details?id=com.harichselvamc.seetime" target="_blank" rel="noopener">
-        <img class="badge-img" alt="Get it on Google Play"
-             src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png">
-      </a>
-    </div>
-  </div>
-</header>
 
-<section>
-  <div class="wrap">
-    <h2>What it is</h2>
-    <p class="lede">
-      See Time is a small, focused Android app for comparing and converting time across
-      any IANA time zone — built for people who work across time zones and are tired of
-      mental math and stale converter websites.
-    </p>
-    <p class="lede">
-      Every offset, DST calculation, and conversion is computed <strong>on-device</strong>
-      using the platform's own time zone database (<code>java.time</code>), stored locally
-      with Room. There's no server, no account, no tracking, and no network permission at
-      all — it works the same on a plane as it does at your desk.
-    </p>
-  </div>
-</section>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        Menu
+      </button>
 
-<section>
-  <div class="wrap">
-    <h2>Features</h2>
-    <div class="features">
-      <div class="feature">
-        <h3>Offline-first</h3>
-        <p>No internet permission, no network calls. Every time zone conversion runs entirely on your device.</p>
-      </div>
-      <div class="feature">
-        <h3>DST-aware</h3>
-        <p>Shows the real daylight-saving delta for each zone, not a guessed +1:00 — correct even for the handful of zones with unusual DST shifts.</p>
-      </div>
-      <div class="feature">
-        <h3>Home screen widget</h3>
-        <p>Pin your primary time pair to the home screen for an at-a-glance check.</p>
-      </div>
-      <div class="feature">
-        <h3>Quick shortcuts</h3>
-        <p>Long-press the app icon to jump straight to adding a time pair or reporting an issue.</p>
-      </div>
-      <div class="feature">
-        <h3>12h / 24h format</h3>
-        <p>Switch the clock format from Settings — applies everywhere instantly.</p>
-      </div>
-      <div class="feature">
-        <h3>Material You</h3>
-        <p>Dynamic color on Android 12+, plus a clean dark theme.</p>
-      </div>
-    </div>
-  </div>
-</section>
+      <nav class="site-nav" id="site-nav" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms</a>
+        <a href="https://github.com/harichselvamc/SeeTime" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="mailto:harichselvamc@gmail.com">Contact</a>
+      </nav>
+    </header>
 
-<section>
-  <div class="wrap">
-    <h2>Screenshots</h2>
-    <div class="shots">
-      <img src="https://github.com/user-attachments/assets/eb4d45af-10c2-4422-8d6c-46c087ac27d8" alt="Home screen showing saved time pairs">
-      <img src="https://github.com/user-attachments/assets/05920377-dedd-463b-9fa2-ddddb0eba1e5" alt="Add time zone dialog">
-      <img src="https://github.com/user-attachments/assets/410552fa-0915-49f3-9814-8792e91aa286" alt="Swipe right to delete a time pair">
-      <img src="https://github.com/user-attachments/assets/cb91c9db-5a89-42a8-aa33-fd52083f98db" alt="Swipe left to edit a time pair">
-    </div>
-  </div>
-</section>
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Offline time zone companion</p>
+          <h1>Know what time it is, everywhere</h1>
+          <p class="hero-text">
+            See Time compares and converts time across any IANA time zone, computed entirely
+            on your device. No server, no account, no tracking — it works the same on a plane
+            as it does at your desk.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-solid" href="https://github.com/harichselvamc/SeeTime" target="_blank" rel="noreferrer">View on GitHub</a>
+            <a class="button button-ghost" href="https://github.com/harichselvamc/SeeTime/releases" target="_blank" rel="noreferrer">Download APK</a>
+          </div>
+          <p class="hero-note">Google Play release coming soon.</p>
+        </div>
 
-<section>
-  <div class="wrap">
-    <h2>Reach us</h2>
-    <ul class="contact-list">
-      <li>
-        <a href="mailto:harichselvamc@gmail.com">harichselvamc@gmail.com</a>
-        <span>Feedback, questions, or issue reports</span>
-      </li>
-      <li>
-        <a href="https://github.com/harichselvamc/SeeTime/issues" target="_blank" rel="noopener">GitHub Issues</a>
-        <span>File a bug or feature request</span>
-      </li>
-      <li>
-        <a href="https://github.com/harichselvamc" target="_blank" rel="noopener">github.com/harichselvamc</a>
-        <span>More projects</span>
-      </li>
-    </ul>
-  </div>
-</section>
+        <div class="phone-card" aria-label="See Time app preview">
+          <div class="phone-top">
+            <svg class="phone-logo" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="108" height="108" rx="24" fill="#000000"/>
+              <circle cx="54" cy="54" r="30" fill="none" stroke="#ffffff" stroke-width="6"/>
+              <line x1="54" y1="54" x2="41.9" y2="47" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+              <line x1="54" y1="54" x2="73.1" y2="43" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="54" cy="54" r="3" fill="#ffffff"/>
+            </svg>
+            <div>
+              <p>See Time</p>
+              <span>Time Zone Comparisons</span>
+            </div>
+          </div>
 
-<footer>
-  <div class="wrap">
-    Built with Kotlin &amp; Jetpack Compose · <a href="https://github.com/harichselvamc/SeeTime" target="_blank" rel="noopener">github.com/harichselvamc/SeeTime</a>
-  </div>
-</footer>
+          <article class="event-card">
+            <div class="event-row">
+              <div>
+                <p class="event-zone">Asia/Kolkata</p>
+                <p class="event-time">06:01 PM</p>
+              </div>
+              <div>
+                <p class="event-zone">Europe/London</p>
+                <p class="event-time">12:31 PM</p>
+              </div>
+            </div>
+            <span class="event-chip">Time difference: +5:30 hrs</span>
+          </article>
 
+          <article class="event-card muted">
+            <div class="event-row">
+              <div>
+                <p class="event-zone">Asia/Kolkata</p>
+                <p class="event-time">06:01 PM</p>
+              </div>
+              <div>
+                <p class="event-zone">America/New_York</p>
+                <p class="event-time">08:31 AM</p>
+              </div>
+            </div>
+            <span class="event-chip">Time difference: -9:30 hrs</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="section-heading">
+          <p class="eyebrow">Everything you need</p>
+          <h2>Built for people working across time zones</h2>
+          <p>
+            No more mental math, no more stale converter websites — one small app that
+            works instantly, everywhere.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>Offline-first</h3>
+            <p>No internet permission, no network calls. Every conversion runs entirely on your device.</p>
+          </article>
+          <article class="feature-card">
+            <h3>DST-aware</h3>
+            <p>Shows the real daylight-saving delta for each zone, not a guessed +1:00 — correct even for zones with unusual DST shifts.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Home screen widget</h3>
+            <p>Pin your primary time pair to the home screen for an at-a-glance check.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Quick shortcuts</h3>
+            <p>Long-press the app icon to jump straight to adding a time pair or reporting an issue.</p>
+          </article>
+          <article class="feature-card">
+            <h3>12h / 24h format</h3>
+            <p>Switch the clock format from Settings — applies everywhere instantly.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Material You</h3>
+            <p>Dynamic color on Android 12+, plus a clean dark theme.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section principles" id="privacy">
+        <div class="section-heading">
+          <p class="eyebrow">Our principles</p>
+          <h2>Built for privacy, not tracking</h2>
+          <p>
+            See Time stores everything on your device. It requires no account, no internet
+            connection, and collects no personal data.
+            Read the full <a href="privacy.html">Privacy Policy</a>.
+          </p>
+        </div>
+
+        <div class="principles-layout">
+          <div class="principles-list">
+            <span>✓ No account required</span>
+            <span>✓ No internet permission</span>
+            <span>✓ No personal data collected</span>
+            <span>✓ No ads or analytics</span>
+            <span>✓ Everything stays on your device</span>
+          </div>
+
+          <div class="values-grid">
+            <article><h3>Local first</h3><p>Your saved time pairs never leave your device.</p></article>
+            <article><h3>Private</h3><p>No name, email, or account required to use the app.</p></article>
+            <article><h3>Accurate</h3><p>Uses the same IANA time zone database built into Android.</p></article>
+            <article><h3>Lightweight</h3><p>Small install size, fast on any Android device.</p></article>
+            <article><h3>Free</h3><p>No subscriptions, no paywalls, no in-app purchases.</p></article>
+            <article><h3>Transparent</h3><p>Source available on GitHub for anyone to inspect.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section stack">
+        <div class="section-heading">
+          <p class="eyebrow">Built with</p>
+          <h2>Modern Android tools, practical by design</h2>
+        </div>
+        <div class="chip-grid">
+          <span>Kotlin</span>
+          <span>Jetpack Compose</span>
+          <span>Material 3</span>
+          <span>Room Database</span>
+          <span>Glance Widgets</span>
+          <span>Kotlin Coroutines</span>
+        </div>
+      </section>
+
+      <section class="cta">
+        <svg class="cta-logo" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="108" height="108" rx="24" fill="#000000"/>
+          <circle cx="54" cy="54" r="30" fill="none" stroke="#ffffff" stroke-width="6"/>
+          <line x1="54" y1="54" x2="41.9" y2="47" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <line x1="54" y1="54" x2="73.1" y2="43" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="54" cy="54" r="3" fill="#ffffff"/>
+        </svg>
+        <p class="eyebrow">See Time</p>
+        <h2>Start comparing time zones</h2>
+        <p>
+          Offline-first and free. Add a time pair and never do the mental math again.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-solid" href="https://github.com/harichselvamc/SeeTime" target="_blank" rel="noreferrer">GitHub Repository</a>
+          <a class="button button-ghost" href="#features">Explore Features</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>See Time</strong>
+        <p>Offline first · Private · Built for people working across time zones</p>
+        <p><a href="mailto:harichselvamc@gmail.com">harichselvamc@gmail.com</a></p>
+      </div>
+      <div class="footer-links">
+        <a class="footer-link" href="https://github.com/harichselvamc/SeeTime" target="_blank" rel="noreferrer">github.com/harichselvamc/SeeTime</a>
+        <a class="footer-link" href="privacy.html">Privacy Policy</a>
+        <a class="footer-link" href="terms.html">Terms &amp; Conditions</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
