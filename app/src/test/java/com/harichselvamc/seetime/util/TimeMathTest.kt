@@ -74,6 +74,29 @@ class TimeMathTest {
     }
 
     @Test
+    fun `formatDateTime hides seconds in 12-hour clock when requested`() {
+        val now = utcMillis(2025, 11, 18, 12, 31, 32)
+        val result = TimeMath.formatDateTime(
+            nowUtc = now,
+            cache = cache(offsetMinutes = 330),
+            showSeconds = false
+        )
+        assertEquals("18 Nov 2025, 06:01 PM", result)
+    }
+
+    @Test
+    fun `formatDateTime hides seconds in 24-hour clock when requested`() {
+        val now = utcMillis(2025, 11, 18, 12, 31, 32)
+        val result = TimeMath.formatDateTime(
+            nowUtc = now,
+            cache = cache(offsetMinutes = 330),
+            use24Hour = true,
+            showSeconds = false
+        )
+        assertEquals("18 Nov 2025, 18:01", result)
+    }
+
+    @Test
     fun `formatDateTime rolls over to previous day for negative offset`() {
         // 00:30 UTC - 2:00 hrs = previous day 22:30
         val now = utcMillis(2025, 3, 10, 0, 30, 0)
