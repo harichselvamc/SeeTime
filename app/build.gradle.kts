@@ -1,9 +1,41 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.kapt")
 }
+
+// Release signing is loaded from either:
+//  - a local, gitignored `keystore.properties` file at the repo root (for
+//    building signed releases on a dev machine), or
+//  - environment variables (for CI, e.g. GitHub Actions secrets).
+// Neither is present by default, so debug/local `assembleDebug` builds are
+// unaffected; a `release` build without either source simply stays unsigned.
+val keystoreProperties = Properties().apply {
+    val propsFile = rootProject.file("keystore.properties")
+    if (propsFile.exists()) {
+        FileInputStream(propsFile).use { load(it) }
+    }
+}
+
+fun signingProp(propKey: String, envKey: String): String? =
+    keystoreProperties.getProperty(propKey)?.takeIf { it.isNotBlank() }
+        ?: System.getenv(envKey)?.takeIf { it.isNotBlank() }
+
+val releaseStoreFilePath = signingProp("storeFile", "SEETIME_KEYSTORE_PATH")
+val releaseStorePassword = signingProp("storePassword", "SEETIME_KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingProp("keyAlias", "SEETIME_KEY_ALIAS")
+val releaseKeyPassword = signingProp("keyPassword", "SEETIME_KEY_PASSWORD")
+
+val hasReleaseSigning = listOf(
+    releaseStoreFilePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all { !it.isNullOrBlank() }
 
 android {
     namespace = "com.harichselvamc.seetime"
@@ -20,13 +52,28 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFilePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -41,6 +88,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
@@ -51,8 +99,9 @@ android {
 }
 
 dependencies {
-    implementation("androidx.glance:glance:1.1.0")
+    // Home-screen widget
     implementation("androidx.glance:glance-appwidget:1.1.0")
+    implementation("androidx.glance:glance-material3:1.1.0")
 
     // Existing from template
     implementation(libs.androidx.core.ktx)
@@ -72,10 +121,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // Retrofit + Time API
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
 
     // Coroutines

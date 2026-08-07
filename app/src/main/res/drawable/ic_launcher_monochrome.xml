@@ -1,35 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Minimalist clock face. Kept inside the adaptive-icon safe zone
-     (66dp circle centered at 54,54) so it isn't clipped by any launcher mask. -->
+<!-- Used by Android 13+ themed icons (Material You). System tints this
+     silhouette, so the actual color here doesn't matter. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Clock ring -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
+        android:strokeColor="#FF000000"
         android:strokeWidth="6"
         android:pathData="M84,54 A30,30 0 1,1 24,54 A30,30 0 1,1 84,54 Z" />
 
-    <!-- Hour hand, pointing to 10 -->
     <path
-        android:strokeColor="#FFFFFFFF"
+        android:strokeColor="#FF000000"
         android:strokeWidth="5"
         android:strokeLineCap="round"
         android:pathData="M54,54 L41.9,47" />
 
-    <!-- Minute hand, pointing to 2 -->
     <path
-        android:strokeColor="#FFFFFFFF"
+        android:strokeColor="#FF000000"
         android:strokeWidth="5"
         android:strokeLineCap="round"
         android:pathData="M54,54 L73.1,43" />
 
-    <!-- Center pivot -->
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FF000000"
         android:pathData="M57,54 A3,3 0 1,1 51,54 A3,3 0 1,1 57,54 Z" />
 </vector>

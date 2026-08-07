@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_add"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_quick_add_short"
+        android:shortcutLongLabel="@string/shortcut_quick_add_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.harichselvamc.seetime"
+            android:targetClass="com.harichselvamc.seetime.MainActivity">
+            <extra android:name="shortcut_action" android:value="quick_add" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="report_issue"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_report"
+        android:shortcutShortLabel="@string/shortcut_report_issue_short"
+        android:shortcutLongLabel="@string/shortcut_report_issue_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.harichselvamc.seetime"
+            android:targetClass="com.harichselvamc.seetime.MainActivity">
+            <extra android:name="shortcut_action" android:value="report_issue" />
+        </intent>
+    </shortcut>
+</shortcuts>
