@@ -64,7 +64,7 @@ class TimeRepository private constructor(context: Context) {
         dao.delete(pair)
     }
 
-    // Delete by ID (used by swipe-to-delete).
+    // Delete by ID.
     suspend fun deletePairById(id: Long) {
         logd(TAG, "deletePairById() id=$id")
         dao.deleteById(id)

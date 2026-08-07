@@ -12,12 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +40,10 @@ private const val DEVELOPER_EMAIL = "harichselvamc@gmail.com"
 fun SettingsScreen(
     use24HourFormat: Boolean,
     onToggle24HourFormat: (Boolean) -> Unit,
+    showSeconds: Boolean,
+    onToggleShowSeconds: (Boolean) -> Unit,
+    showExtraWidgetPairs: Boolean,
+    onToggleShowExtraWidgetPairs: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -50,7 +54,7 @@ fun SettingsScreen(
                 title = { Text("Settings") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -83,7 +87,56 @@ fun SettingsScreen(
                     Switch(checked = use24HourFormat, onCheckedChange = onToggle24HourFormat)
                 }
 
-                Divider()
+                HorizontalDivider()
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Show seconds", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = if (showSeconds) "06:01:32 PM" else "06:01 PM",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(checked = showSeconds, onCheckedChange = onToggleShowSeconds)
+                }
+
+                HorizontalDivider()
+
+                SettingsSectionHeader("Widget")
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Show extra pairs", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = if (showExtraWidgetPairs) {
+                                "Large widgets show more saved pairs"
+                            } else {
+                                "Widget stays focused on the first pair"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = showExtraWidgetPairs,
+                        onCheckedChange = onToggleShowExtraWidgetPairs
+                    )
+                }
+
+                HorizontalDivider()
 
                 SettingsSectionHeader("About & support")
 
@@ -116,7 +169,7 @@ fun SettingsScreen(
                     }
                 )
 
-                Divider()
+                HorizontalDivider()
 
                 Row(
                     modifier = Modifier

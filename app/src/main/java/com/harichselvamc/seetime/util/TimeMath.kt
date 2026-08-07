@@ -14,12 +14,17 @@ import kotlin.math.abs
 object TimeMath {
 
     /**
-     * Format **date + time**, in either 12-hour ("hh:mm:ss AM/PM") or
-     * 24-hour ("HH:mm:ss") format depending on [use24Hour].
+     * Format **date + time**, in either 12-hour or 24-hour format depending
+     * on [use24Hour], optionally including seconds.
      * Example (12h): "18 Nov 2025, 06:01:32 PM"
      * Example (24h): "18 Nov 2025, 18:01:32"
      */
-    fun formatDateTime(nowUtc: Long, cache: ZoneCache?, use24Hour: Boolean = false): String {
+    fun formatDateTime(
+        nowUtc: Long,
+        cache: ZoneCache?,
+        use24Hour: Boolean = false,
+        showSeconds: Boolean = true
+    ): String {
         if (cache == null) return "--"
 
         val millis = nowUtc + cache.offsetMinutes * 60_000L
@@ -42,7 +47,12 @@ object TimeMath {
         val datePart = "%02d %s %04d".format(day, monthName, year)
 
         if (use24Hour) {
-            return "$datePart, %02d:%02d:%02d".format(hour24, minute, second)
+            val timePart = if (showSeconds) {
+                "%02d:%02d:%02d".format(hour24, minute, second)
+            } else {
+                "%02d:%02d".format(hour24, minute)
+            }
+            return "$datePart, $timePart"
         }
 
         val (hour12, amPm) = when {
@@ -51,7 +61,12 @@ object TimeMath {
             hour24 == 12 -> 12 to "PM"         // 12:xx -> 12 PM
             else -> (hour24 - 12) to "PM"      // 13-23 -> 1-11 PM
         }
-        return "$datePart, %02d:%02d:%02d %s".format(hour12, minute, second, amPm)
+        val timePart = if (showSeconds) {
+            "%02d:%02d:%02d %s".format(hour12, minute, second, amPm)
+        } else {
+            "%02d:%02d %s".format(hour12, minute, amPm)
+        }
+        return "$datePart, $timePart"
     }
 
     /**

@@ -43,9 +43,15 @@ class MainActivity : ComponentActivity() {
 
                 if (showSettings) {
                     val use24Hour by vm.use24HourFormat.collectAsState()
+                    val showSeconds by vm.showSeconds.collectAsState()
+                    val showExtraWidgetPairs by vm.showExtraWidgetPairs.collectAsState()
                     SettingsScreen(
                         use24HourFormat = use24Hour,
                         onToggle24HourFormat = vm::setUse24HourFormat,
+                        showSeconds = showSeconds,
+                        onToggleShowSeconds = vm::setShowSeconds,
+                        showExtraWidgetPairs = showExtraWidgetPairs,
+                        onToggleShowExtraWidgetPairs = vm::setShowExtraWidgetPairs,
                         onBack = { showSettings = false }
                     )
                 } else {

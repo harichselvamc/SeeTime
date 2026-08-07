@@ -11,6 +11,7 @@ import com.harichselvamc.seetime.data.local.TimePair
 import com.harichselvamc.seetime.util.TimeMath
 import com.harichselvamc.seetime.widget.WidgetUpdater
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -45,9 +46,22 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
     private val settingsRepo = SettingsRepository.getInstance(app)
 
     val use24HourFormat: StateFlow<Boolean> = settingsRepo.use24HourFormat
+    val showSeconds: StateFlow<Boolean> = settingsRepo.showSeconds
+    val showExtraWidgetPairs: StateFlow<Boolean> = settingsRepo.showExtraWidgetPairs
 
     fun setUse24HourFormat(enabled: Boolean) {
         settingsRepo.setUse24HourFormat(enabled)
+        refreshDisplayedTimes()
+    }
+
+    fun setShowSeconds(enabled: Boolean) {
+        settingsRepo.setShowSeconds(enabled)
+        refreshDisplayedTimes()
+    }
+
+    fun setShowExtraWidgetPairs(enabled: Boolean) {
+        settingsRepo.setShowExtraWidgetPairs(enabled)
+        refreshDisplayedTimes()
     }
 
     private val _state = MutableStateFlow(HomeUiState())
@@ -127,19 +141,21 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
 
         viewModelScope.launch {
             logd("startTicker() started")
-            while (true) {
-                try {
-                    tickOnce()
-                } catch (e: Exception) {
-                    Log.e(TAG, "startTicker() tick failed -> ${e.message}", e)
+            settingsRepo.showSeconds.collectLatest { secondsEnabled ->
+                while (true) {
+                    try {
+                        tickOnce()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "startTicker() tick failed -> ${e.message}", e)
+                    }
+                    delay(nextTickerDelayMillis(secondsEnabled))
                 }
-                delay(1000L)
             }
         }
     }
 
     /**
-     * Delete by id (used by swipe-to-delete).
+     * Delete by id.
      */
     fun deletePair(id: Long) {
         viewModelScope.launch {
@@ -176,14 +192,25 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
 
         logd("tickOnce() nowUtc=$nowUtc count=${current.size}")
         val use24Hour = use24HourFormat.value
+        val showSecondsEnabled = showSeconds.value
 
         val refreshed = current.map { ui ->
             val fromCache = repo.getZoneCache(ui.fromZone)
             val toCache = repo.getZoneCache(ui.toZone)
 
             ui.copy(
-                displayFromTime = TimeMath.formatDateTime(nowUtc, fromCache, use24Hour),
-                displayToTime = TimeMath.formatDateTime(nowUtc, toCache, use24Hour),
+                displayFromTime = TimeMath.formatDateTime(
+                    nowUtc,
+                    fromCache,
+                    use24Hour,
+                    showSecondsEnabled
+                ),
+                displayToTime = TimeMath.formatDateTime(
+                    nowUtc,
+                    toCache,
+                    use24Hour,
+                    showSecondsEnabled
+                ),
                 diffText = TimeMath.buildDiffText(fromCache, toCache),
                 dstText = TimeMath.buildDstText(fromCache, toCache)
             )
@@ -192,12 +219,31 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
         _state.value = _state.value.copy(pairs = refreshed)
     }
 
+    private fun refreshDisplayedTimes() {
+        viewModelScope.launch {
+            try {
+                tickOnce()
+                WidgetUpdater.requestUpdate(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "refreshDisplayedTimes() failed -> ${e.message}", e)
+            }
+        }
+    }
+
+    private fun nextTickerDelayMillis(secondsEnabled: Boolean): Long {
+        if (secondsEnabled) return 1000L
+        val now = System.currentTimeMillis()
+        val millisPastMinute = now % 60_000L
+        return (60_000L - millisPastMinute).coerceIn(1000L, 60_000L)
+    }
+
     /* ------------ Helpers ------------ */
 
     private suspend fun toUiList(pairs: List<TimePair>): List<TimePairUi> {
         val nowUtc = System.currentTimeMillis()
         logd("toUiList() nowUtc=$nowUtc")
         val use24Hour = use24HourFormat.value
+        val showSecondsEnabled = showSeconds.value
 
         return pairs.map { pair ->
             val fromCache = repo.getZoneCache(pair.fromZone)
@@ -212,8 +258,18 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                 id = pair.id,
                 fromZone = pair.fromZone,
                 toZone = pair.toZone,
-                displayFromTime = TimeMath.formatDateTime(nowUtc, fromCache, use24Hour),
-                displayToTime = TimeMath.formatDateTime(nowUtc, toCache, use24Hour),
+                displayFromTime = TimeMath.formatDateTime(
+                    nowUtc,
+                    fromCache,
+                    use24Hour,
+                    showSecondsEnabled
+                ),
+                displayToTime = TimeMath.formatDateTime(
+                    nowUtc,
+                    toCache,
+                    use24Hour,
+                    showSecondsEnabled
+                ),
                 diffText = TimeMath.buildDiffText(fromCache, toCache),
                 dstText = TimeMath.buildDstText(fromCache, toCache)
             )
