@@ -149,13 +149,20 @@ fun OnboardingScreen(
                     ) {
                         // Icon circle or App Logo
                         if (index == 0) {
-                            androidx.compose.foundation.Image(
-                                painter = androidx.compose.ui.res.painterResource(id = com.harichselvamc.seetime.R.mipmap.ic_launcher),
-                                contentDescription = "SeeTime Logo",
+                            Box(
                                 modifier = Modifier
-                                    .size(110.dp)
+                                    .size(120.dp)
                                     .clip(CircleShape)
-                            )
+                                    .background(MaterialTheme.colorScheme.primary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(id = com.harichselvamc.seetime.R.drawable.ic_launcher_foreground),
+                                    contentDescription = "SeeTime Logo",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(80.dp)
+                                )
+                            }
                         } else {
                             Box(
                                 modifier = Modifier
