@@ -46,8 +46,8 @@ android {
         applicationId = "com.harichselvamc.seetime"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.1.1"
+        versionCode = 4
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -99,9 +99,7 @@ android {
 }
 
 dependencies {
-    // Home-screen widget
-    implementation("androidx.glance:glance-appwidget:1.1.0")
-    implementation("androidx.glance:glance-material3:1.1.0")
+
 
     // Existing from template
     implementation(libs.androidx.core.ktx)
@@ -112,6 +110,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+
+    // Material Icons Extended — full professional icon set
+    implementation("androidx.compose.material:material-icons-extended")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -135,4 +136,7 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
+
+    // WorkManager for Smart Reminders
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 }

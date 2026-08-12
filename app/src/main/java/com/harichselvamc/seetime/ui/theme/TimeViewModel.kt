@@ -9,7 +9,7 @@ import com.harichselvamc.seetime.data.SettingsRepository
 import com.harichselvamc.seetime.data.TimeRepository
 import com.harichselvamc.seetime.data.local.TimePair
 import com.harichselvamc.seetime.util.TimeMath
-import com.harichselvamc.seetime.widget.WidgetUpdater
+
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,10 +20,12 @@ data class TimePairUi(
     val id: Long,
     val fromZone: String,
     val toZone: String,
+    val label: String,
     val displayFromTime: String,   // now includes date + time (12-hour)
     val displayToTime: String,     // now includes date + time (12-hour)
     val diffText: String,
-    val dstText: String
+    val dstText: String,
+    val offsetDifferenceMinutes: Int
 )
 
 data class HomeUiState(
@@ -47,7 +49,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
 
     val use24HourFormat: StateFlow<Boolean> = settingsRepo.use24HourFormat
     val showSeconds: StateFlow<Boolean> = settingsRepo.showSeconds
-    val showExtraWidgetPairs: StateFlow<Boolean> = settingsRepo.showExtraWidgetPairs
+
 
     fun setUse24HourFormat(enabled: Boolean) {
         settingsRepo.setUse24HourFormat(enabled)
@@ -59,13 +61,13 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
         refreshDisplayedTimes()
     }
 
-    fun setShowExtraWidgetPairs(enabled: Boolean) {
-        settingsRepo.setShowExtraWidgetPairs(enabled)
-        refreshDisplayedTimes()
-    }
+
 
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state
+
+    private val _timeOffsetMinutes = MutableStateFlow(0)
+    val timeOffsetMinutes: StateFlow<Int> = _timeOffsetMinutes
 
     // to avoid starting multiple tickers
     @Volatile
@@ -80,7 +82,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                 logd("load() pairs count=${pairs.size}")
                 val uiPairs = toUiList(pairs)
                 _state.value = HomeUiState(isLoading = false, pairs = uiPairs)
-                WidgetUpdater.requestUpdate(getApplication())
+
             } catch (e: Exception) {
                 Log.e(TAG, "load() failed -> ${e.message}", e)
                 _state.value = HomeUiState(isLoading = false, error = e.message)
@@ -97,7 +99,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                 val pairs = repo.getPairs()
                 val uiPairs = toUiList(pairs)
                 _state.value = HomeUiState(isLoading = false, pairs = uiPairs)
-                WidgetUpdater.requestUpdate(getApplication())
+
             } catch (e: Exception) {
                 Log.e(TAG, "refreshAll() failed -> ${e.message}", e)
                 _state.value = HomeUiState(isLoading = false, error = e.message)
@@ -105,10 +107,10 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun addPair(fromZone: String, toZone: String) {
+    fun addPair(fromZone: String, toZone: String, label: String = "") {
         viewModelScope.launch {
-            logd("addPair() from=$fromZone to=$toZone")
-            repo.addPair(fromZone, toZone)
+            logd("addPair() from=$fromZone to=$toZone label=$label")
+            repo.addPair(fromZone, toZone, label)
             repo.refreshAllZones()
             load()
         }
@@ -144,7 +146,10 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
             settingsRepo.showSeconds.collectLatest { secondsEnabled ->
                 while (true) {
                     try {
-                        tickOnce()
+                        // Only tick if we are in live mode (offset is 0)
+                        if (_timeOffsetMinutes.value == 0) {
+                            tickOnce()
+                        }
                     } catch (e: Exception) {
                         Log.e(TAG, "startTicker() tick failed -> ${e.message}", e)
                     }
@@ -152,6 +157,17 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
+    }
+
+    fun setTimeOffset(minutes: Int) {
+        _timeOffsetMinutes.value = minutes
+        viewModelScope.launch {
+            tickOnce()
+        }
+    }
+
+    fun resetToLive() {
+        setTimeOffset(0)
     }
 
     /**
@@ -172,11 +188,11 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
     /**
      * Edit an existing pair's zones.
      */
-    fun editPair(id: Long, fromZone: String, toZone: String) {
+    fun editPair(id: Long, fromZone: String, toZone: String, label: String) {
         viewModelScope.launch {
             try {
-                logd("editPair() id=$id from=$fromZone to=$toZone")
-                repo.updatePair(id, fromZone, toZone)
+                logd("editPair() id=$id from=$fromZone to=$toZone label=$label")
+                repo.updatePair(id, fromZone, toZone, label)
                 repo.refreshAllZones()
                 load()
             } catch (e: Exception) {
@@ -186,7 +202,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun tickOnce() {
-        val nowUtc = System.currentTimeMillis()
+        val nowUtc = System.currentTimeMillis() + (_timeOffsetMinutes.value * 60_000L)
         val current = _state.value.pairs
         if (current.isEmpty()) return
 
@@ -198,6 +214,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
             val fromCache = repo.getZoneCache(ui.fromZone)
             val toCache = repo.getZoneCache(ui.toZone)
 
+            val diffMin = if (toCache != null && fromCache != null) toCache.offsetMinutes - fromCache.offsetMinutes else 0
             ui.copy(
                 displayFromTime = TimeMath.formatDateTime(
                     nowUtc,
@@ -212,7 +229,8 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                     showSecondsEnabled
                 ),
                 diffText = TimeMath.buildDiffText(fromCache, toCache),
-                dstText = TimeMath.buildDstText(fromCache, toCache)
+                dstText = TimeMath.buildDstText(fromCache, toCache),
+                offsetDifferenceMinutes = diffMin
             )
         }
 
@@ -223,7 +241,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 tickOnce()
-                WidgetUpdater.requestUpdate(getApplication())
+
             } catch (e: Exception) {
                 Log.e(TAG, "refreshDisplayedTimes() failed -> ${e.message}", e)
             }
@@ -240,7 +258,7 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
     /* ------------ Helpers ------------ */
 
     private suspend fun toUiList(pairs: List<TimePair>): List<TimePairUi> {
-        val nowUtc = System.currentTimeMillis()
+        val nowUtc = System.currentTimeMillis() + (_timeOffsetMinutes.value * 60_000L)
         logd("toUiList() nowUtc=$nowUtc")
         val use24Hour = use24HourFormat.value
         val showSecondsEnabled = showSeconds.value
@@ -254,10 +272,12 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                         "fromCache=${fromCache?.offsetMinutes}, toCache=${toCache?.offsetMinutes}"
             )
 
+            val diffMin = if (toCache != null && fromCache != null) toCache.offsetMinutes - fromCache.offsetMinutes else 0
             TimePairUi(
                 id = pair.id,
                 fromZone = pair.fromZone,
                 toZone = pair.toZone,
+                label = pair.label,
                 displayFromTime = TimeMath.formatDateTime(
                     nowUtc,
                     fromCache,
@@ -271,7 +291,8 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                     showSecondsEnabled
                 ),
                 diffText = TimeMath.buildDiffText(fromCache, toCache),
-                dstText = TimeMath.buildDstText(fromCache, toCache)
+                dstText = TimeMath.buildDstText(fromCache, toCache),
+                offsetDifferenceMinutes = diffMin
             )
         }
     }

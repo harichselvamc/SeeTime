@@ -36,7 +36,7 @@ class TimeRepository private constructor(context: Context) {
         AppDatabase::class.java,
         "see_time.db"
     )
-        .addMigrations(AppDatabase.MIGRATION_1_2)
+        .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
         .build()
 
     private val dao = db.dao()
@@ -49,10 +49,10 @@ class TimeRepository private constructor(context: Context) {
         return list
     }
 
-    suspend fun addPair(fromZone: String, toZone: String): Long {
-        logd(TAG, "addPair() from=$fromZone to=$toZone")
+    suspend fun addPair(fromZone: String, toZone: String, label: String = ""): Long {
+        logd(TAG, "addPair() from=$fromZone to=$toZone label=$label")
         val nextOrder = dao.getMaxSortOrder() + 1
-        val pair = TimePair(fromZone = fromZone, toZone = toZone, sortOrder = nextOrder)
+        val pair = TimePair(fromZone = fromZone, toZone = toZone, sortOrder = nextOrder, label = label)
         val id = dao.insert(pair)
         logd(TAG, "addPair() inserted id=$id sortOrder=$nextOrder")
         return id
@@ -72,9 +72,9 @@ class TimeRepository private constructor(context: Context) {
 
     // Update an existing pair's zones (used by edit dialog). Keeps the same
     // id and sortOrder rather than deleting + reinserting.
-    suspend fun updatePair(id: Long, fromZone: String, toZone: String) {
-        logd(TAG, "updatePair() id=$id from=$fromZone to=$toZone")
-        dao.updateZones(id, fromZone, toZone)
+    suspend fun updatePair(id: Long, fromZone: String, toZone: String, label: String) {
+        logd(TAG, "updatePair() id=$id from=$fromZone to=$toZone label=$label")
+        dao.updateZones(id, fromZone, toZone, label)
     }
 
     // Persist a new ordering after a drag-to-reorder gesture.

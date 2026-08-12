@@ -9,17 +9,15 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.harichselvamc.seetime.ui.HomeScreen
-import com.harichselvamc.seetime.ui.SettingsScreen
+import com.harichselvamc.seetime.data.SettingsRepository
+import com.harichselvamc.seetime.ui.OnboardingScreen
+import com.harichselvamc.seetime.ui.SeeTimeApp
 import com.harichselvamc.seetime.ui.TimeViewModel
 import com.harichselvamc.seetime.ui.theme.SeeTimeTheme
 
 /** Extra key set by the app shortcuts declared in res/xml/shortcuts.xml. */
-const val EXTRA_SHORTCUT_ACTION = "shortcut_action"
-const val SHORTCUT_ACTION_QUICK_ADD = "quick_add"
+const val EXTRA_SHORTCUT_ACTION       = "shortcut_action"
+const val SHORTCUT_ACTION_QUICK_ADD   = "quick_add"
 const val SHORTCUT_ACTION_REPORT_ISSUE = "report_issue"
 
 private const val DEVELOPER_EMAIL = "harichselvamc@gmail.com"
@@ -29,7 +27,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        val shortcutAction = intent?.getStringExtra(EXTRA_SHORTCUT_ACTION)
+        val shortcutAction      = intent?.getStringExtra(EXTRA_SHORTCUT_ACTION)
         val launchWithAddDialog = shortcutAction == SHORTCUT_ACTION_QUICK_ADD
 
         if (shortcutAction == SHORTCUT_ACTION_REPORT_ISSUE) {
@@ -39,26 +37,22 @@ class MainActivity : ComponentActivity() {
         setContent {
             SeeTimeTheme {
                 val vm: TimeViewModel = viewModel()
-                var showSettings by remember { mutableStateOf(false) }
+                val settingsRepo = androidx.compose.runtime.remember {
+                    SettingsRepository.getInstance(applicationContext)
+                }
+                val onboardingCompleted by settingsRepo.onboardingCompleted.collectAsState(initial = false)
 
-                if (showSettings) {
-                    val use24Hour by vm.use24HourFormat.collectAsState()
-                    val showSeconds by vm.showSeconds.collectAsState()
-                    val showExtraWidgetPairs by vm.showExtraWidgetPairs.collectAsState()
-                    SettingsScreen(
-                        use24HourFormat = use24Hour,
-                        onToggle24HourFormat = vm::setUse24HourFormat,
-                        showSeconds = showSeconds,
-                        onToggleShowSeconds = vm::setShowSeconds,
-                        showExtraWidgetPairs = showExtraWidgetPairs,
-                        onToggleShowExtraWidgetPairs = vm::setShowExtraWidgetPairs,
-                        onBack = { showSettings = false }
+                if (!onboardingCompleted) {
+                    OnboardingScreen(
+                        onFinished = {
+                            settingsRepo.setOnboardingCompleted(true)
+                        }
                     )
                 } else {
-                    HomeScreen(
-                        viewModel = vm,
-                        startWithAddDialog = launchWithAddDialog,
-                        onOpenSettings = { showSettings = true }
+                    // Main app shell with bottom navigation
+                    SeeTimeApp(
+                        viewModel          = vm,
+                        startWithAddDialog = launchWithAddDialog
                     )
                 }
             }
@@ -72,7 +66,7 @@ class MainActivity : ComponentActivity() {
         try {
             startActivity(intent)
         } catch (_: Exception) {
-            // No mail app available — user still lands on the home screen normally.
+            // No mail app available — user lands on home screen normally.
         }
     }
 }

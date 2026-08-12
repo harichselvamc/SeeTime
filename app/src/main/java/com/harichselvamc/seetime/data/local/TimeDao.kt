@@ -17,8 +17,8 @@ interface TimeDao {
     @Query("DELETE FROM time_pairs WHERE id = :id")
     suspend fun deleteById(id: Long)
 
-    @Query("UPDATE time_pairs SET fromZone = :fromZone, toZone = :toZone WHERE id = :id")
-    suspend fun updateZones(id: Long, fromZone: String, toZone: String)
+    @Query("UPDATE time_pairs SET fromZone = :fromZone, toZone = :toZone, label = :label WHERE id = :id")
+    suspend fun updateZones(id: Long, fromZone: String, toZone: String, label: String)
 
     @Query("UPDATE time_pairs SET sortOrder = :sortOrder WHERE id = :id")
     suspend fun updateSortOrder(id: Long, sortOrder: Long)

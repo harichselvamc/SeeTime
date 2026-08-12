@@ -8,7 +8,8 @@ data class TimePair(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val fromZone: String,
     val toZone: String,
-    val sortOrder: Long = 0
+    val sortOrder: Long = 0,
+    val label: String = ""
 )
 
 @Entity(tableName = "timezone_cache")

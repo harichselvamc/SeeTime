@@ -16,7 +16,8 @@ class SettingsRepository private constructor(context: Context) {
         private const val PREFS_NAME = "see_time_settings"
         private const val KEY_USE_24_HOUR = "use_24_hour_format"
         private const val KEY_SHOW_SECONDS = "show_seconds"
-        private const val KEY_SHOW_EXTRA_WIDGET_PAIRS = "show_extra_widget_pairs"
+        private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+
 
         @Volatile
         private var INSTANCE: SettingsRepository? = null
@@ -37,9 +38,10 @@ class SettingsRepository private constructor(context: Context) {
     private val _showSeconds = MutableStateFlow(prefs.getBoolean(KEY_SHOW_SECONDS, true))
     val showSeconds: StateFlow<Boolean> = _showSeconds
 
-    private val _showExtraWidgetPairs =
-        MutableStateFlow(prefs.getBoolean(KEY_SHOW_EXTRA_WIDGET_PAIRS, true))
-    val showExtraWidgetPairs: StateFlow<Boolean> = _showExtraWidgetPairs
+    private val _onboardingCompleted = MutableStateFlow(prefs.getBoolean(KEY_ONBOARDING_COMPLETED, false))
+    val onboardingCompleted: StateFlow<Boolean> = _onboardingCompleted
+
+
 
     fun setUse24HourFormat(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_USE_24_HOUR, enabled) }
@@ -51,8 +53,10 @@ class SettingsRepository private constructor(context: Context) {
         _showSeconds.value = enabled
     }
 
-    fun setShowExtraWidgetPairs(enabled: Boolean) {
-        prefs.edit { putBoolean(KEY_SHOW_EXTRA_WIDGET_PAIRS, enabled) }
-        _showExtraWidgetPairs.value = enabled
+    fun setOnboardingCompleted(completed: Boolean) {
+        prefs.edit { putBoolean(KEY_ONBOARDING_COMPLETED, completed) }
+        _onboardingCompleted.value = completed
     }
+
+
 }

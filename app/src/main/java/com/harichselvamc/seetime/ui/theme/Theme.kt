@@ -11,30 +11,56 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val LightColors = lightColorScheme(
-    primary = Purple40,
+    primary = Cobalt60,
     onPrimary = White,
-    secondary = Teal40,
+    primaryContainer = Cobalt80,
+    onPrimaryContainer = Cobalt20,
+    secondary = Purple60,
     onSecondary = White,
+    secondaryContainer = Purple80,
+    onSecondaryContainer = Purple40,
+    tertiary = Cyan60,
+    onTertiary = White,
+    tertiaryContainer = LightSurfaceVar,
+    onTertiaryContainer = SlateText,
     background = LightBg,
-    onBackground = Black,
+    onBackground = SlateText,
     surface = LightSurface,
-    onSurface = Black
+    onSurface = SlateText,
+    surfaceVariant = LightSurfaceVar,
+    onSurfaceVariant = SlateText,
+    outline = LightOutline,
+    error = ErrorCoral,
+    onError = White
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Purple80,
-    onPrimary = Black,
-    secondary = Teal80,
-    onSecondary = Black,
+    primary = Cobalt60,
+    onPrimary = White,
+    primaryContainer = Cobalt20,
+    onPrimaryContainer = Cobalt80,
+    secondary = Purple60,
+    onSecondary = White,
+    secondaryContainer = DarkSurfaceVar,
+    onSecondaryContainer = Purple80,
+    tertiary = Cyan60,
+    onTertiary = Black,
+    tertiaryContainer = DarkSurfaceVar,
+    onTertiaryContainer = Cyan60,
     background = DarkBg,
     onBackground = White,
     surface = DarkSurface,
-    onSurface = White
+    onSurface = White,
+    surfaceVariant = DarkSurfaceVar,
+    onSurfaceVariant = SlateTextLight,
+    outline = DarkOutline,
+    error = ErrorCoral,
+    onError = White
 )
 
 @Composable
 fun SeeTimeTheme(
-    useDarkTheme: Boolean = isSystemInDarkTheme(),   // 👈 follows device
+    useDarkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {

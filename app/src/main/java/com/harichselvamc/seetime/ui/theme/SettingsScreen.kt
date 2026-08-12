@@ -4,32 +4,41 @@ package com.harichselvamc.seetime.ui
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.AlternateEmail
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.ShareLocation
+import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.harichselvamc.seetime.BuildConfig
 
@@ -41,155 +50,179 @@ fun SettingsScreen(
     use24HourFormat: Boolean,
     onToggle24HourFormat: (Boolean) -> Unit,
     showSeconds: Boolean,
-    onToggleShowSeconds: (Boolean) -> Unit,
-    showExtraWidgetPairs: Boolean,
-    onToggleShowExtraWidgetPairs: (Boolean) -> Unit,
-    onBack: () -> Unit
+    onToggleShowSeconds: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Surface(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            // ── Page Header ──
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            ) {
+                Text(
+                    "Settings",
+                    style      = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "Customize your experience",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-                SettingsSectionHeader("Display")
+            // ── Display Section ──
+            SettingsSectionHeader("Display")
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("24-hour time format", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = if (use24HourFormat) "18:01:32" else "06:01:32 PM",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column {
+                    SettingsToggleRow(
+                        title = "24-hour time format",
+                        subtitle = if (use24HourFormat) "18:01:32" else "06:01:32 PM",
+                        checked = use24HourFormat,
+                        onCheckedChange = onToggle24HourFormat
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    ) {
+                        Spacer(modifier = Modifier.height(1.dp))
                     }
-                    Switch(checked = use24HourFormat, onCheckedChange = onToggle24HourFormat)
-                }
 
-                HorizontalDivider()
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Show seconds", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = if (showSeconds) "06:01:32 PM" else "06:01 PM",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(checked = showSeconds, onCheckedChange = onToggleShowSeconds)
-                }
-
-                HorizontalDivider()
-
-                SettingsSectionHeader("Widget")
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Show extra pairs", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = if (showExtraWidgetPairs) {
-                                "Large widgets show more saved pairs"
-                            } else {
-                                "Widget stays focused on the first pair"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(
-                        checked = showExtraWidgetPairs,
-                        onCheckedChange = onToggleShowExtraWidgetPairs
+                    SettingsToggleRow(
+                        title = "Show seconds",
+                        subtitle = if (showSeconds) "06:01:32 PM" else "06:01 PM",
+                        checked = showSeconds,
+                        onCheckedChange = onToggleShowSeconds
                     )
                 }
+            }
 
-                HorizontalDivider()
+            // ── About & Support Section ──
+            SettingsSectionHeader("About & Support")
 
-                SettingsSectionHeader("About & support")
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column {
+                    SettingsLinkRow(
+                        icon = Icons.Outlined.StarOutline,
+                        iconTint = MaterialTheme.colorScheme.secondary,
+                        title = "GitHub Repository",
+                        subtitle = "View source, star, or fork the project",
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_REPO_URL))
+                            )
+                        }
+                    )
 
-                SettingsLinkRow(
-                    icon = Icons.Default.Star,
-                    title = "GitHub repository",
-                    subtitle = "View source, star, or fork the project",
-                    onClick = {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_REPO_URL))
-                        )
-                    }
-                )
+                    SettingsDivider()
 
-                SettingsLinkRow(
-                    icon = Icons.Default.Warning,
-                    title = "Report an issue",
-                    subtitle = DEVELOPER_EMAIL,
-                    onClick = {
-                        context.startActivity(mailIntent(subject = "SeeTime - Issue report"))
-                    }
-                )
+                    SettingsLinkRow(
+                        icon = Icons.Outlined.BugReport,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        title = "Report an Issue",
+                        subtitle = DEVELOPER_EMAIL,
+                        onClick = {
+                            context.startActivity(mailIntent(subject = "SeeTime - Issue report"))
+                        }
+                    )
 
-                SettingsLinkRow(
-                    icon = Icons.Default.Email,
-                    title = "Contact the developer",
-                    subtitle = DEVELOPER_EMAIL,
-                    onClick = {
-                        context.startActivity(mailIntent(subject = "SeeTime - Feedback"))
-                    }
-                )
+                    SettingsDivider()
 
-                HorizontalDivider()
+                    SettingsLinkRow(
+                        icon = Icons.Outlined.AlternateEmail,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        title = "Contact the Developer",
+                        subtitle = DEVELOPER_EMAIL,
+                        onClick = {
+                            context.startActivity(mailIntent(subject = "SeeTime - Feedback"))
+                        }
+                    )
 
+                    SettingsDivider()
+
+                    SettingsLinkRow(
+                        icon = Icons.Outlined.ShareLocation,
+                        iconTint = MaterialTheme.colorScheme.tertiary,
+                        title = "Share SeeTime",
+                        subtitle = "Share with friends and colleagues",
+                        onClick = {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    "Check out SeeTime — a timezone comparison app! $GITHUB_REPO_URL"
+                                )
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share SeeTime"))
+                        }
+                    )
+                }
+            }
+
+            // ── Version Footer ──
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Info,
+                        imageVector = Icons.Outlined.Info,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "See Time v${BuildConfig.VERSION_NAME}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 12.dp)
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -204,33 +237,106 @@ private fun SettingsSectionHeader(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+        modifier = Modifier.padding(start = 4.dp)
     )
 }
 
 @Composable
-private fun SettingsLinkRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun SettingsToggleRow(
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(imageVector = icon, contentDescription = null)
-        Column(modifier = Modifier.padding(start = 16.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                subtitle,
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        )
+    }
+}
+
+@Composable
+private fun SettingsDivider() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+    ) {
+        Spacer(modifier = Modifier.height(1.dp))
+    }
+}
+
+@Composable
+private fun SettingsLinkRow(
+    icon: ImageVector,
+    iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        color = androidx.compose.ui.graphics.Color.Transparent
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(36.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = iconTint.copy(alpha = 0.12f)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
