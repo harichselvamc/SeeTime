@@ -65,8 +65,10 @@ class MainActivity : ComponentActivity() {
                 val onboardingCompleted by settingsRepo.onboardingCompleted.collectAsState(initial = false)
                 
                 val currentVersionCode = BuildConfig.VERSION_CODE
-                val lastOpenedVersionCode = settingsRepo.getLastOpenedVersionCode()
-                val showWhatsNew = currentVersionCode > lastOpenedVersionCode
+                val lastOpenedVersionCode = androidx.compose.runtime.remember { settingsRepo.getLastOpenedVersionCode() }
+                var showWhatsNew by androidx.compose.runtime.remember { 
+                    androidx.compose.runtime.mutableStateOf(currentVersionCode > lastOpenedVersionCode) 
+                }
 
                 if (!onboardingCompleted) {
                     OnboardingScreen(
@@ -84,6 +86,7 @@ class MainActivity : ComponentActivity() {
                         showWhatsNew       = showWhatsNew,
                         onWhatsNewDismissed = {
                             settingsRepo.setLastOpenedVersionCode(currentVersionCode)
+                            showWhatsNew = false
                         }
                     )
                 }
