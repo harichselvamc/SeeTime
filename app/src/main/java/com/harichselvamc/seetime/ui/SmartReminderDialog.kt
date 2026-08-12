@@ -308,6 +308,18 @@ fun SmartReminderDialog(
                             )
                             .build()
 
+                        val newAlarm = AlarmUi(
+                            id = workRequest.id,
+                            title = finalTitle,
+                            targetTime = targetTimeStr,
+                            zone = selectedZone,
+                            scheduledAt = scheduledAtEpoch,
+                            firesAt = firesAtEpoch,
+                            repeatDays = selectedDays.sorted(),
+                            isEnabled = true
+                        )
+                        com.harichselvamc.seetime.data.AlarmRepository.getInstance(context).addAlarm(newAlarm)
+
                         WorkManager.getInstance(context).enqueue(workRequest)
                         onDismiss()
                     } catch (e: Exception) {

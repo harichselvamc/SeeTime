@@ -51,6 +51,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.harichselvamc.seetime.data.AlarmRepository
 import com.harichselvamc.seetime.reminder.TimeReminderWorker
 import java.time.Duration
 import java.time.ZoneId
@@ -75,11 +76,12 @@ private val SAMSUNG_DAYS = listOf("M", "T", "W", "T", "F", "S", "S")
 fun RemindersScreen() {
     val context = LocalContext.current
     val workManager = remember { WorkManager.getInstance(context) }
+    val alarmRepo = remember { AlarmRepository.getInstance(context) }
 
-    var alarms by remember { mutableStateOf<List<AlarmUi>>(emptyList()) }
+    var alarms by remember { mutableStateOf(alarmRepo.getAlarms()) }
     var cancelTarget by remember { mutableStateOf<AlarmUi?>(null) }
 
-    // Load pending alarms from WorkManager
+    // Sync from WorkManager metadata to repository on load
     DisposableEffect(workManager) {
         val liveData = workManager.getWorkInfosByTagLiveData(TimeReminderWorker.TAG)
         val observer = Observer<List<WorkInfo>> { infos ->
@@ -111,11 +113,10 @@ fun RemindersScreen() {
                         isEnabled   = isEnqueued
                     )
                 }
-                .distinctBy { "${it.title}_${it.zone}_${it.targetTime}" }
 
-            if (parsedList.isNotEmpty()) {
-                alarms = parsedList
-            }
+            // Add any new alarms from WorkManager into repo
+            parsedList.forEach { alarmRepo.addAlarm(it) }
+            alarms = alarmRepo.getAlarms()
         }
         liveData.observeForever(observer)
         onDispose {
@@ -127,9 +128,9 @@ fun RemindersScreen() {
         if (!enabled) {
             // Cancel in WorkManager
             workManager.cancelWorkById(alarm.id)
-            alarms = alarms.map {
-                if (it.id == alarm.id) it.copy(isEnabled = false) else it
-            }
+            val updated = alarm.copy(isEnabled = false)
+            alarmRepo.updateAlarm(updated)
+            alarms = alarmRepo.getAlarms()
         } else {
             // Re-enqueue in WorkManager
             try {
@@ -165,11 +166,10 @@ fun RemindersScreen() {
                     .build()
 
                 workManager.enqueue(workRequest)
-                alarms = alarms.map {
-                    if (it.id == alarm.id) {
-                        it.copy(id = workRequest.id, isEnabled = true, firesAt = firesAtEpoch)
-                    } else it
-                }
+                val updated = alarm.copy(id = workRequest.id, isEnabled = true, firesAt = firesAtEpoch)
+                alarmRepo.deleteAlarm(alarm.id)
+                alarmRepo.addAlarm(updated)
+                alarms = alarmRepo.getAlarms()
             } catch (_: Exception) {}
         }
     }
@@ -306,7 +306,8 @@ fun RemindersScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     workManager.cancelWorkById(alarm.id)
-                    alarms = alarms.filter { it.id != alarm.id }
+                    alarmRepo.deleteAlarm(alarm.id)
+                    alarms = alarmRepo.getAlarms()
                     cancelTarget = null
                 }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)

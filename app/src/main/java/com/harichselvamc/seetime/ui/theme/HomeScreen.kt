@@ -174,11 +174,6 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // World clock bar
-            if (state.pairs.isNotEmpty()) {
-                WorldClockBar(state.pairs)
-            }
-
             when {
                 // Loading with no data
                 state.isLoading && state.pairs.isEmpty() -> {
@@ -262,6 +257,10 @@ fun HomeScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        item {
+                            WorldClockBar(state.pairs)
+                        }
+
                         itemsIndexed(
                             items = state.pairs,
                             key = { _, item -> item.id }
@@ -358,57 +357,70 @@ private fun WorldClockBar(pairs: List<TimePairUi>) {
 
     val rows = remember(uniqueZones) { uniqueZones.chunked(3) }
 
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+            .padding(vertical = 4.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        rows.forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                rowItems.forEach { (zone, displayTime) ->
-                    val rawTime = displayTime.split(",", limit = 2).getOrNull(1)?.trim() ?: displayTime
-                    // Format compactly by removing seconds e.g. "03:52:44 PM" -> "03:52 PM"
-                    val compactTime = remember(rawTime) {
-                        rawTime.replace(Regex(":\\d{2}(\\s*[AP]M|\\b)", RegexOption.IGNORE_CASE), "$1")
-                    }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "World Clock Overview",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
 
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        tonalElevation = 1.dp
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+            rows.forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowItems.forEach { (zone, displayTime) ->
+                        val rawTime = displayTime.split(",", limit = 2).getOrNull(1)?.trim() ?: displayTime
+                        val compactTime = remember(rawTime) {
+                            rawTime.replace(Regex(":\\d{2}(\\s*[AP]M|\\b)", RegexOption.IGNORE_CASE), "$1")
+                        }
+
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
                         ) {
-                            Text(
-                                text = shortZoneName(zone),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = compactTime,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            Column(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = shortZoneName(zone),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = compactTime,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
-                }
-                // Fill empty slots in the row if fewer than 3 items
-                repeat(3 - rowItems.size) {
-                    Spacer(modifier = Modifier.weight(1f))
+                    repeat(3 - rowItems.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
