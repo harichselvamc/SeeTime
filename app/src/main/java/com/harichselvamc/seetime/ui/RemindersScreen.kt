@@ -174,11 +174,14 @@ fun RemindersScreen() {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+    androidx.compose.material3.Scaffold(
+        containerColor = MaterialTheme.colorScheme.background
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
         // ── Page Header (Samsung Clock Style) ──
         Column(
             modifier = Modifier
@@ -319,6 +322,7 @@ fun RemindersScreen() {
                 }
             }
         )
+    }
     }
 }
 

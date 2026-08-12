@@ -53,11 +53,14 @@ fun InsightsScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+    androidx.compose.material3.Scaffold(
+        containerColor = MaterialTheme.colorScheme.background
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
         // ── Page Header ──
         Column(
             modifier = Modifier
@@ -326,6 +329,7 @@ fun InsightsScreen(
                         }
                     }
                 }
+            }
             }
         }
     }
