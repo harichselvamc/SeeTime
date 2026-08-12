@@ -46,8 +46,8 @@ android {
         applicationId = "com.harichselvamc.seetime"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.2.0"
+        versionCode = 5
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -139,4 +139,7 @@ dependencies {
 
     // WorkManager for Smart Reminders
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Google Play In-App Updates
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 }

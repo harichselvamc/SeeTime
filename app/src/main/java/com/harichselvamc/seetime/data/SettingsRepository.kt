@@ -17,6 +17,7 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_USE_24_HOUR = "use_24_hour_format"
         private const val KEY_SHOW_SECONDS = "show_seconds"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+        private const val KEY_LAST_OPENED_VERSION_CODE = "last_opened_version_code"
 
 
         @Volatile
@@ -58,5 +59,11 @@ class SettingsRepository private constructor(context: Context) {
         _onboardingCompleted.value = completed
     }
 
+    fun getLastOpenedVersionCode(): Int {
+        return prefs.getInt(KEY_LAST_OPENED_VERSION_CODE, 0)
+    }
 
+    fun setLastOpenedVersionCode(versionCode: Int) {
+        prefs.edit { putInt(KEY_LAST_OPENED_VERSION_CODE, versionCode) }
+    }
 }

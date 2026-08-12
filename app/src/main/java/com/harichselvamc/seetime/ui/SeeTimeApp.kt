@@ -38,7 +38,14 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,13 +76,45 @@ private val tabs = listOf(
 @Composable
 fun SeeTimeApp(
     viewModel: TimeViewModel,
-    startWithAddDialog: Boolean = false
+    startWithAddDialog: Boolean = false,
+    updateDownloaded: Boolean = false,
+    onRestartForUpdate: () -> Unit = {},
+    showWhatsNew: Boolean = false,
+    onWhatsNewDismissed: () -> Unit = {}
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val timeOffset by viewModel.timeOffsetMinutes.collectAsState()
     val use24Hour  by viewModel.use24HourFormat.collectAsState()
     val showSecs   by viewModel.showSeconds.collectAsState()
     var showTimeTravelSheet by remember { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(updateDownloaded) {
+        if (updateDownloaded) {
+            val result = snackbarHostState.showSnackbar(
+                message = "An update has just been downloaded.",
+                actionLabel = "RESTART",
+                duration = SnackbarDuration.Indefinite
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                onRestartForUpdate()
+            }
+        }
+    }
+
+    if (showWhatsNew) {
+        AlertDialog(
+            onDismissRequest = onWhatsNewDismissed,
+            title = { Text("What's New") },
+            text = { Text("Enjoy the latest features and bug fixes!") },
+            confirmButton = {
+                TextButton(onClick = onWhatsNewDismissed) {
+                    Text("Awesome")
+                }
+            }
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -165,6 +204,11 @@ fun SeeTimeApp(
                 onDismiss = { showTimeTravelSheet = false }
             )
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
