@@ -32,14 +32,13 @@ Found a bug or have a feature request? Open an [issue](https://github.com/harich
 
 ## Screenshots
 
-1. Home Screen
-<img width="250" alt="Home Screen" src="https://github.com/user-attachments/assets/eb4d45af-10c2-4422-8d6c-46c087ac27d8" />
 
-2. Add Time Zone
-<img width="250" alt="Add Time Zone" src="https://github.com/user-attachments/assets/05920377-dedd-463b-9fa2-ddddb0eba1e5" />
-
-3. Swipe Right to Delete (Home Screen)
-<img width="250" alt="Swipe Right to Delete" src="https://github.com/user-attachments/assets/410552fa-0915-49f3-9814-8792e91aa286" />
-
-4. Swipe Left to Edit
-<img width="250" alt="Swipe Left to Edit" src="https://github.com/user-attachments/assets/cb91c9db-5a89-42a8-aa33-fd52083f98db" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/a8713e90-4cd7-42eb-b981-a2c9bc88e3ed" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/9e67a8fb-fc72-486d-9f99-c8c004d20a74" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/10faccb1-f085-40b9-82eb-92f45a954aee" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/54868812-be05-4f8d-a1a8-9e6d7a6ff648" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/b7d763ad-4e16-4eab-b772-ba3181b9017a" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/42d1b0b3-8480-4e28-bef7-5255d6742f4b" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/a7660aeb-7125-4f02-aa6a-f6d557582967" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/330de9d2-b200-4f9a-a018-6da4ce8d3282" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/7fb4ccbd-d641-46aa-9512-22655b6eae6f" />
