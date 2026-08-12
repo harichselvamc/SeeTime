@@ -147,31 +147,41 @@ fun OnboardingScreen(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Icon circle
-                        Box(
-                            modifier = Modifier
-                                .size(120.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        // Icon circle or App Logo
+                        if (index == 0) {
+                            androidx.compose.foundation.Image(
+                                painter = androidx.compose.ui.res.painterResource(id = com.harichselvamc.seetime.R.mipmap.ic_launcher),
+                                contentDescription = "SeeTime Logo",
+                                modifier = Modifier
+                                    .size(110.dp)
+                                    .clip(CircleShape)
+                            )
+                        } else {
                             Box(
                                 modifier = Modifier
-                                    .size(80.dp)
+                                    .size(120.dp)
                                     .clip(CircleShape)
                                     .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    imageVector = page.icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(40.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = page.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(40.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
 
