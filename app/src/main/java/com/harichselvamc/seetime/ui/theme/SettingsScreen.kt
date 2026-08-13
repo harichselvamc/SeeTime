@@ -153,7 +153,7 @@ fun SettingsScreen(
                         title = "Report an Issue",
                         subtitle = DEVELOPER_EMAIL,
                         onClick = {
-                            context.startActivity(mailIntent(subject = "SeeTime - Issue report"))
+                            context.startActivity(mailIntent(subject = "SeeTime - Bug Report", isReport = true))
                         }
                     )
 
@@ -165,7 +165,7 @@ fun SettingsScreen(
                         title = "Contact the Developer",
                         subtitle = DEVELOPER_EMAIL,
                         onClick = {
-                            context.startActivity(mailIntent(subject = "SeeTime - Feedback"))
+                            context.startActivity(mailIntent(subject = "SeeTime - Developer Feedback", isReport = false))
                         }
                     )
 
@@ -227,10 +227,34 @@ fun SettingsScreen(
     }
 }
 
-private fun mailIntent(subject: String): Intent =
-    Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$DEVELOPER_EMAIL")).apply {
-        putExtra(Intent.EXTRA_SUBJECT, subject)
+private fun mailIntent(subject: String, isReport: Boolean): Intent {
+    val prompt = if (isReport) {
+        "[ Please describe the issue or bug you experienced here ]\n\n"
+    } else {
+        "[ Write your feedback, question, or suggestion here ]\n\n"
     }
+
+    val footer = """
+        ________________________________________
+        Device & App Information:
+        • App Version: SeeTime v${BuildConfig.VERSION_NAME}
+        • Android OS: ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})
+        • Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}
+        • System Timezone: ${java.util.TimeZone.getDefault().id}
+        ________________________________________
+    """.trimIndent()
+
+    val fullBody = prompt + footer
+
+    val uriString = "mailto:$DEVELOPER_EMAIL" +
+            "?subject=" + Uri.encode(subject) +
+            "&body=" + Uri.encode(fullBody)
+
+    return Intent(Intent.ACTION_SENDTO, Uri.parse(uriString)).apply {
+        putExtra(Intent.EXTRA_SUBJECT, subject)
+        putExtra(Intent.EXTRA_TEXT, fullBody)
+    }
+}
 
 @Composable
 private fun SettingsSectionHeader(text: String) {

@@ -148,7 +148,7 @@ fun SeeTimeApp(
                             onOpenTimeTravelSheet = { showTimeTravelSheet = true }
                         )
                         1 -> InsightsScreen(viewModel = viewModel)
-                        2 -> RemindersScreen()
+                        2 -> RemindersScreen(viewModel = viewModel)
                         3 -> SettingsScreen(
                             use24HourFormat     = use24Hour,
                             onToggle24HourFormat = viewModel::setUse24HourFormat,

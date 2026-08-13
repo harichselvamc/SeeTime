@@ -25,7 +25,8 @@ data class TimePairUi(
     val displayToTime: String,     // now includes date + time (12-hour)
     val diffText: String,
     val dstText: String,
-    val offsetDifferenceMinutes: Int
+    val offsetDifferenceMinutes: Int,
+    val currentEpochMillis: Long = System.currentTimeMillis()
 )
 
 data class HomeUiState(
@@ -230,7 +231,8 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                 ),
                 diffText = TimeMath.buildDiffText(fromCache, toCache),
                 dstText = TimeMath.buildDstText(fromCache, toCache),
-                offsetDifferenceMinutes = diffMin
+                offsetDifferenceMinutes = diffMin,
+                currentEpochMillis = nowUtc
             )
         }
 
@@ -292,7 +294,8 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                 ),
                 diffText = TimeMath.buildDiffText(fromCache, toCache),
                 dstText = TimeMath.buildDstText(fromCache, toCache),
-                offsetDifferenceMinutes = diffMin
+                offsetDifferenceMinutes = diffMin,
+                currentEpochMillis = nowUtc
             )
         }
     }

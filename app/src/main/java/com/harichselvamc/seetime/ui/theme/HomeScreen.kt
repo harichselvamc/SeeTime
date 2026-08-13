@@ -678,7 +678,8 @@ private fun DraggableTimePairCard(
                 TimeAuditChart(
                     fromZone               = shortZoneName(ui.fromZone),
                     toZone                 = shortZoneName(ui.toZone),
-                    offsetDifferenceMinutes = ui.offsetDifferenceMinutes
+                    offsetDifferenceMinutes = ui.offsetDifferenceMinutes,
+                    currentEpochMillis     = ui.currentEpochMillis
                 )
             }
         }

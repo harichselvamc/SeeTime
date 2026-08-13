@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,13 +74,16 @@ data class AlarmUi(
 private val SAMSUNG_DAYS = listOf("M", "T", "W", "T", "F", "S", "S")
 
 @Composable
-fun RemindersScreen() {
+fun RemindersScreen(
+    viewModel: TimeViewModel? = null
+) {
     val context = LocalContext.current
     val workManager = remember { WorkManager.getInstance(context) }
     val alarmRepo = remember { AlarmRepository.getInstance(context) }
 
     var alarms by remember { mutableStateOf(alarmRepo.getAlarms()) }
     var cancelTarget by remember { mutableStateOf<AlarmUi?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
 
     // Sync from WorkManager metadata to repository on load
     DisposableEffect(workManager) {
@@ -114,8 +118,18 @@ fun RemindersScreen() {
                     )
                 }
 
-            // Add any new alarms from WorkManager into repo
-            parsedList.forEach { alarmRepo.addAlarm(it) }
+            // Sync with repo: Only auto-add if enqueued & active, or update state if present in repo.
+            // Do NOT re-add cancelled/deleted alarms from historical WorkManager logs!
+            val existingInRepo = alarmRepo.getAlarms().associateBy { it.id }
+            parsedList.forEach { workAlarm ->
+                if (existingInRepo.containsKey(workAlarm.id)) {
+                    // Update enabled status from WorkManager runtime state
+                    alarmRepo.updateAlarm(workAlarm)
+                } else if (workAlarm.isEnabled) {
+                    // Only insert new external alarms if actively enqueued
+                    alarmRepo.addAlarm(workAlarm)
+                }
+            }
             alarms = alarmRepo.getAlarms()
         }
         liveData.observeForever(observer)
@@ -128,6 +142,7 @@ fun RemindersScreen() {
         if (!enabled) {
             // Cancel in WorkManager
             workManager.cancelWorkById(alarm.id)
+            workManager.pruneWork()
             val updated = alarm.copy(isEnabled = false)
             alarmRepo.updateAlarm(updated)
             alarms = alarmRepo.getAlarms()
@@ -174,34 +189,74 @@ fun RemindersScreen() {
         }
     }
 
+    val homePairs = viewModel?.state?.collectAsState()?.value?.pairs ?: emptyList()
+
     androidx.compose.material3.Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        floatingActionButton = {
+            androidx.compose.material3.FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AddAlarm,
+                        contentDescription = "Add Reminder"
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Reminder", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-        // ── Page Header (Samsung Clock Style) ──
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 24.dp, vertical = 24.dp)
-        ) {
-            Text(
-                "Reminders",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                "Recurring meeting alarms & timezone alerts",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+            // ── Page Header (Samsung Clock Style with Add Action) ──
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Reminders",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        "Recurring meeting alarms & timezone alerts",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Surface(
+                    onClick = { showAddDialog = true },
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AddAlarm,
+                        contentDescription = "Add Reminder",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .size(24.dp)
+                    )
+                }
+            }
 
         if (alarms.isEmpty()) {
             Box(
@@ -289,6 +344,19 @@ fun RemindersScreen() {
         }
     }
 
+    if (showAddDialog) {
+        val defaultFrom = homePairs.firstOrNull()?.fromZone ?: "Asia/Kolkata"
+        val defaultTo   = homePairs.firstOrNull()?.toZone   ?: "Europe/London"
+        SmartReminderDialog(
+            fromZone  = defaultFrom,
+            toZone    = defaultTo,
+            onDismiss = {
+                showAddDialog = false
+                alarms = alarmRepo.getAlarms()
+            }
+        )
+    }
+
     cancelTarget?.let { alarm ->
         AlertDialog(
             onDismissRequest = { cancelTarget = null },
@@ -309,6 +377,7 @@ fun RemindersScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     workManager.cancelWorkById(alarm.id)
+                    workManager.pruneWork()
                     alarmRepo.deleteAlarm(alarm.id)
                     alarms = alarmRepo.getAlarms()
                     cancelTarget = null
