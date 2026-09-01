@@ -39,6 +39,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -195,7 +197,7 @@ fun RemindersScreen(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             androidx.compose.material3.FloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = remember { { showAddDialog = true } },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(16.dp)
@@ -243,7 +245,7 @@ fun RemindersScreen(
                     )
                 }
                 Surface(
-                    onClick = { showAddDialog = true },
+                    onClick = remember { { showAddDialog = true } },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
                 ) {
@@ -334,10 +336,10 @@ fun RemindersScreen(
                 items(alarms, key = { it.id }) { alarm ->
                     SamsungAlarmCard(
                         alarm = alarm,
-                        onToggleEnabled = { enabled ->
+                        onToggleEnabled = remember(alarm) { { enabled ->
                             handleToggle(alarm, enabled)
-                        },
-                        onDelete = { cancelTarget = alarm }
+                        } },
+                        onDelete = remember(alarm) { { cancelTarget = alarm } }
                     )
                 }
             }
@@ -419,16 +421,22 @@ private fun SamsungAlarmCard(
         Pair(String.format("%02d:%02d", h12, m), ampm)
     }
 
-    val timeRemaining = remember(alarm.firesAt, isEnabled) {
-        if (!isEnabled) ""
-        else {
+    var remainingTimeText by remember(alarm.firesAt, isEnabled) { mutableStateOf("") }
+    LaunchedEffect(alarm.firesAt, isEnabled) {
+        if (!isEnabled) {
+            remainingTimeText = ""
+            return@LaunchedEffect
+        }
+        while (true) {
             val diff = alarm.firesAt - System.currentTimeMillis()
-            if (diff <= 0) "Alarm due"
-            else {
+            remainingTimeText = if (diff <= 0) {
+                "Alarm due"
+            } else {
                 val h = diff / 3_600_000
                 val m = (diff % 3_600_000) / 60_000
                 if (h > 0) "Alarm in ${h}h ${m}m" else "Alarm in ${m}m"
             }
+            kotlinx.coroutines.delay(1000L)
         }
     }
 
@@ -548,14 +556,14 @@ private fun SamsungAlarmCard(
             }
 
             // Time Remaining Countdown Label
-            if (isEnabled && timeRemaining.isNotEmpty()) {
+            if (isEnabled && remainingTimeText.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
                 ) {
                     Text(
-                        text = timeRemaining,
+                        text = remainingTimeText,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onTertiaryContainer,

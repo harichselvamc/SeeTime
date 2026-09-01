@@ -90,12 +90,15 @@ android {
         compose = true
         buildConfig = true
     }
+    dynamicFeatures += setOf(":camera_feature")
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+
 }
 
 dependencies {
@@ -142,4 +145,7 @@ dependencies {
 
     // Google Play In-App Updates
     implementation("com.google.android.play:app-update-ktx:2.1.0")
+    implementation("com.google.android.play:feature-delivery:2.1.0")
+
+
 }

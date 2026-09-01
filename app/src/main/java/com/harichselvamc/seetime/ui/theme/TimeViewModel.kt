@@ -29,9 +29,19 @@ data class TimePairUi(
     val currentEpochMillis: Long = System.currentTimeMillis()
 )
 
+data class ActivityUi(
+    val id: Long,
+    val label: String,
+    val startTime: String, // Formatted time string
+    val endTime: String,   // Formatted time string
+    val category: String,
+    val date: String       // Formatted date string
+)
+
 data class HomeUiState(
     val isLoading: Boolean = false,
     val pairs: List<TimePairUi> = emptyList(),
+    val activities: List<ActivityUi> = emptyList(), // New list for activities
     val error: String? = null
 )
 
@@ -80,9 +90,11 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
             _state.value = _state.value.copy(isLoading = true)
             try {
                 val pairs = repo.getPairs()
-                logd("load() pairs count=${pairs.size}")
+                val activities = repo.getActivities() // Fetch activities
+                logd("load() pairs count=${pairs.size}, activities count=${activities.size}")
                 val uiPairs = toUiList(pairs)
-                _state.value = HomeUiState(isLoading = false, pairs = uiPairs)
+                val uiActivities = toActivityUiList(activities) // Convert to UI models
+                _state.value = HomeUiState(isLoading = false, pairs = uiPairs, activities = uiActivities) // Update state with activities
 
             } catch (e: Exception) {
                 Log.e(TAG, "load() failed -> ${e.message}", e)
@@ -114,6 +126,24 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
             repo.addPair(fromZone, toZone, label)
             repo.refreshAllZones()
             load()
+        }
+    }
+
+    fun addActivity(label: String, startTime: String, endTime: String) {
+        viewModelScope.launch {
+            logd("addActivity() label=$label startTime=$startTime endTime=$endTime")
+            // Convert time strings (HH:mm) to milliseconds
+            // This needs proper date handling. For simplicity, let's assume it's for today.
+            // A more robust solution would involve date pickers in the dialog.
+            val now = System.currentTimeMillis()
+            val (startHour, startMinute) = startTime.split(":").map { it.toInt() }
+            val (endHour, endMinute) = endTime.split(":").map { it.toInt() }
+
+            val startMillis = TimeMath.getMillisForTimeToday(startHour, startMinute, now)
+            val endMillis = TimeMath.getMillisForTimeToday(endHour, endMinute, now)
+
+            repo.addActivity(label, startMillis, endMillis)
+            load() // Refresh activities list
         }
     }
 
@@ -295,9 +325,43 @@ class TimeViewModel(app: Application) : AndroidViewModel(app) {
                 diffText = TimeMath.buildDiffText(fromCache, toCache),
                 dstText = TimeMath.buildDstText(fromCache, toCache),
                 offsetDifferenceMinutes = diffMin,
-                currentEpochMillis = nowUtc
-            )
-        }
-    }
+                 currentEpochMillis = nowUtc
+             )
+         }
+     }
+
+     private suspend fun toActivityUiList(activities: List<com.harichselvamc.seetime.data.local.Activity>): List<ActivityUi> {
+         val nowUtc = System.currentTimeMillis() + (_timeOffsetMinutes.value * 60_000L)
+         val use24Hour = use24HourFormat.value
+         val showSecondsEnabled = showSeconds.value
+
+         return activities.map { activity ->
+             val formattedStartTime = TimeMath.formatDateTime(
+                 activity.startTimeMillis,
+                 repo.getZoneCache(TimeMath.systemZoneId),
+                 use24Hour,
+                 showSecondsEnabled
+             )
+             val formattedEndTime = TimeMath.formatDateTime(
+                 activity.endTimeMillis,
+                 repo.getZoneCache(TimeMath.systemZoneId),
+                 use24Hour,
+                 showSecondsEnabled
+             )
+             val formattedDate = TimeMath.formatDateOnly(
+                 activity.startTimeMillis,
+                 repo.getZoneCache(TimeMath.systemZoneId) // Assuming system default for activity dates
+             )
+
+             ActivityUi(
+                 id = activity.id,
+                 label = activity.label,
+                 startTime = formattedStartTime,
+                 endTime = formattedEndTime,
+                 category = activity.category,
+                 date = formattedDate
+             )
+         }
+     }
 
 }

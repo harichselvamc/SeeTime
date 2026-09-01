@@ -33,6 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -247,10 +248,8 @@ fun OnboardingScreen(
                 ) {
                     if (pagerState.currentPage > 0) {
                         TextButton(
-                            onClick = {
-                                scope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                                }
+                            onClick = remember {
+                                { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } }
                             }
                         ) {
                             Text(
@@ -264,13 +263,15 @@ fun OnboardingScreen(
                     }
 
                     Button(
-                        onClick = {
-                            if (pagerState.currentPage < pages.lastIndex) {
-                                scope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        onClick = remember(onFinished, pages.lastIndex) {
+                            { ->
+                                if (pagerState.currentPage < pages.lastIndex) {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                    }
+                                } else {
+                                    onFinished()
                                 }
-                            } else {
-                                onFinished()
                             }
                         },
                         shape = RoundedCornerShape(12.dp),

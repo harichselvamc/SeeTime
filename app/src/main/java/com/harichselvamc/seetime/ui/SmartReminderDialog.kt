@@ -270,60 +270,62 @@ fun SmartReminderDialog(
         },
         confirmButton = {
             Button(
-                onClick = {
-                    val h = targetHour.toIntOrNull()
-                    val m = targetMinute.toIntOrNull()
-                    if (h == null || h !in 0..23 || m == null || m !in 0..59) {
-                        errorText = "Please enter a valid hour (0-23) and minute (0-59)."
-                        return@Button
-                    }
-
-                    try {
-                        val zoneId = ZoneId.of(selectedZone)
-                        val nowInZone = ZonedDateTime.now(zoneId)
-                        var targetInZone = nowInZone.withHour(h).withMinute(m).withSecond(0).withNano(0)
-                        if (targetInZone.isBefore(nowInZone)) {
-                            targetInZone = targetInZone.plusDays(1)
+                onClick = remember(reminderTitle, targetHour, targetMinute, selectedZone, selectedDays.toList(), errorText) {
+                    {
+                        val h = targetHour.toIntOrNull()
+                        val m = targetMinute.toIntOrNull()
+                        if (h == null || h !in 0..23 || m == null || m !in 0..59) {
+                            errorText = "Please enter a valid hour (0-23) and minute (0-59)."
+                            return
                         }
-                        val delayMillis = Duration.between(nowInZone, targetInZone).toMillis()
 
-                        val finalTitle = if (reminderTitle.isBlank()) "SeeTime Meeting" else reminderTitle.trim()
-                        val targetTimeStr = String.format("%02d:%02d", h, m)
-                        val firesAtEpoch = System.currentTimeMillis() + delayMillis
-                        val scheduledAtEpoch = System.currentTimeMillis()
-                        val daysStr = selectedDays.sorted().joinToString(",")
+                        try {
+                            val zoneId = ZoneId.of(selectedZone)
+                            val nowInZone = ZonedDateTime.now(zoneId)
+                            var targetInZone = nowInZone.withHour(h).withMinute(m).withSecond(0).withNano(0)
+                            if (targetInZone.isBefore(nowInZone)) {
+                                targetInZone = targetInZone.plusDays(1)
+                            }
+                            val delayMillis = Duration.between(nowInZone, targetInZone).toMillis()
 
-                        // meta format: title|targetTime|zone|firesAt|scheduledAt|repeatDays|enabled
-                        val metaTag = "meta::${finalTitle}|$targetTimeStr|${selectedZone}|$firesAtEpoch|$scheduledAtEpoch|$daysStr|true"
+                            val finalTitle = if (reminderTitle.isBlank()) "SeeTime Meeting" else reminderTitle.trim()
+                            val targetTimeStr = String.format("%02d:%02d", h, m)
+                            val firesAtEpoch = System.currentTimeMillis() + delayMillis
+                            val scheduledAtEpoch = System.currentTimeMillis()
+                            val daysStr = selectedDays.sorted().joinToString(",")
 
-                        val workRequest = OneTimeWorkRequestBuilder<TimeReminderWorker>()
-                            .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
-                            .addTag(TimeReminderWorker.TAG)
-                            .addTag(metaTag)
-                            .setInputData(
-                                workDataOf(
-                                    "title" to finalTitle,
-                                    "message" to "Meeting at $targetTimeStr in ${shortZoneName(selectedZone)}."
+                            // meta format: title|targetTime|zone|firesAt|scheduledAt|repeatDays|enabled
+                            val metaTag = "meta::${finalTitle}|$targetTimeStr|${selectedZone}|$firesAtEpoch|$scheduledAtEpoch|$daysStr|true"
+
+                            val workRequest = OneTimeWorkRequestBuilder<TimeReminderWorker>()
+                                .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
+                                .addTag(TimeReminderWorker.TAG)
+                                .addTag(metaTag)
+                                .setInputData(
+                                    workDataOf(
+                                        "title" to finalTitle,
+                                        "message" to "Meeting at $targetTimeStr in ${shortZoneName(selectedZone)}."
+                                    )
                                 )
+                                .build()
+
+                            val newAlarm = AlarmUi(
+                                id = workRequest.id,
+                                title = finalTitle,
+                                targetTime = targetTimeStr,
+                                zone = selectedZone,
+                                scheduledAt = scheduledAtEpoch,
+                                firesAt = firesAtEpoch,
+                                repeatDays = selectedDays.sorted(),
+                                isEnabled = true
                             )
-                            .build()
+                            com.harichselvamc.seetime.data.AlarmRepository.getInstance(context).addAlarm(newAlarm)
 
-                        val newAlarm = AlarmUi(
-                            id = workRequest.id,
-                            title = finalTitle,
-                            targetTime = targetTimeStr,
-                            zone = selectedZone,
-                            scheduledAt = scheduledAtEpoch,
-                            firesAt = firesAtEpoch,
-                            repeatDays = selectedDays.sorted(),
-                            isEnabled = true
-                        )
-                        com.harichselvamc.seetime.data.AlarmRepository.getInstance(context).addAlarm(newAlarm)
-
-                        WorkManager.getInstance(context).enqueue(workRequest)
-                        onDismiss()
-                    } catch (e: Exception) {
-                        errorText = "Failed: ${e.message}"
+                            WorkManager.getInstance(context).enqueue(workRequest)
+                            onDismiss()
+                        } catch (e: Exception) {
+                            errorText = "Failed: ${e.message}"
+                        }
                     }
                 },
                 shape = RoundedCornerShape(14.dp),

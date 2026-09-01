@@ -154,14 +154,17 @@ fun TimeAuditChart(
             val needleColor = MaterialTheme.colorScheme.error
 
             // Calculate overlap hours for summary
-            var bothWorkingCount = 0
-            var oneWorkingCount = 0
-            for (hour in 0 until 24) {
-                val isLocalWorking = hour in 9..17
-                val targetHour = (hour + (offsetDifferenceMinutes / 60) + 24) % 24
-                val isTargetWorking = targetHour in 9..17
-                if (isLocalWorking && isTargetWorking) bothWorkingCount++
-                else if (isLocalWorking || isTargetWorking) oneWorkingCount++
+            val (bothWorkingCount, oneWorkingCount) = remember(offsetDifferenceMinutes) {
+                var bwCount = 0
+                var owCount = 0
+                for (hour in 0 until 24) {
+                    val isLocalWorking = hour in 9..17
+                    val targetHour = (hour + (offsetDifferenceMinutes / 60) + 24) % 24
+                    val isTargetWorking = targetHour in 9..17
+                    if (isLocalWorking && isTargetWorking) bwCount++
+                    else if (isLocalWorking || isTargetWorking) owCount++
+                }
+                Pair(bwCount, owCount)
             }
 
             Canvas(

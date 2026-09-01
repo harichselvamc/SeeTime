@@ -1,0 +1,75 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    xmlns:dist="http://schemas.android.com/apk/distribution"
+4    featureSplit="camera_feature"
+5    package="com.harichselvamc.seetime"
+6    android:versionCode="8"
+7    android:versionName="1.3.3" >
+8
+9    <uses-sdk
+10        android:minSdkVersion="24"
+11        android:targetSdkVersion="24" />
+12
+13    <dist:module
+13-->D:\SeeTime\camera_feature\src\main\AndroidManifest.xml:6:5-15:19
+14        dist:fusing="true"
+14-->D:\SeeTime\camera_feature\src\main\AndroidManifest.xml:7:9-27
+15        dist:instant="false" >
+15-->D:\SeeTime\camera_feature\src\main\AndroidManifest.xml:8:9-29
+16        <dist:delivery>
+16-->D:\SeeTime\camera_feature\src\main\AndroidManifest.xml:9:9-11:25
+17            <dist:on-demand />
+17-->D:\SeeTime\camera_feature\src\main\AndroidManifest.xml:10:13-31
+18        </dist:delivery>
+19
+20        <dist:module-config>
+20-->D:\SeeTime\camera_feature\src\main\AndroidManifest.xml:12:9-14:30
+21            <dist:title>
+21-->D:\SeeTime\camera_feature\src\main\AndroidManifest.xml:13:13-66
+22@string/title_camera_feature
+23            </dist:title>
+24        </dist:module-config>
+25    </dist:module>
+26
+27    <queries>
+27-->[androidx.camera:camera-extensions:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\698441474af9b7b69a43a8602f402dfe\transformed\camera-extensions-1.3.3\AndroidManifest.xml:22:5-26:15
+28        <intent>
+28-->[androidx.camera:camera-extensions:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\698441474af9b7b69a43a8602f402dfe\transformed\camera-extensions-1.3.3\AndroidManifest.xml:23:9-25:18
+29            <action android:name="androidx.camera.extensions.action.VENDOR_ACTION" />
+29-->[androidx.camera:camera-extensions:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\698441474af9b7b69a43a8602f402dfe\transformed\camera-extensions-1.3.3\AndroidManifest.xml:24:13-86
+29-->[androidx.camera:camera-extensions:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\698441474af9b7b69a43a8602f402dfe\transformed\camera-extensions-1.3.3\AndroidManifest.xml:24:21-83
+30        </intent>
+31    </queries>
+32
+33    <application
+33-->D:\SeeTime\camera_feature\src\main\AndroidManifest.xml:17:5-19:19
+34        android:debuggable="true"
+35        android:extractNativeLibs="false" >
+36
+37        <!-- Activity declarations specific to this feature module -->
+38        <uses-library
+38-->[androidx.camera:camera-extensions:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\698441474af9b7b69a43a8602f402dfe\transformed\camera-extensions-1.3.3\AndroidManifest.xml:29:9-31:40
+39            android:name="androidx.camera.extensions.impl"
+39-->[androidx.camera:camera-extensions:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\698441474af9b7b69a43a8602f402dfe\transformed\camera-extensions-1.3.3\AndroidManifest.xml:30:13-59
+40            android:required="false" />
+40-->[androidx.camera:camera-extensions:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\698441474af9b7b69a43a8602f402dfe\transformed\camera-extensions-1.3.3\AndroidManifest.xml:31:13-37
+41
+42        <service
+42-->[androidx.camera:camera-camera2:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\74ea214b7318d90be22d26a68fc89a15\transformed\camera-camera2-1.3.3\AndroidManifest.xml:24:9-33:19
+43            android:name="androidx.camera.core.impl.MetadataHolderService"
+43-->[androidx.camera:camera-camera2:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\74ea214b7318d90be22d26a68fc89a15\transformed\camera-camera2-1.3.3\AndroidManifest.xml:25:13-75
+44            android:enabled="false"
+44-->[androidx.camera:camera-camera2:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\74ea214b7318d90be22d26a68fc89a15\transformed\camera-camera2-1.3.3\AndroidManifest.xml:26:13-36
+45            android:exported="false"
+45-->[androidx.camera:camera-camera2:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\74ea214b7318d90be22d26a68fc89a15\transformed\camera-camera2-1.3.3\AndroidManifest.xml:27:13-37
+46            android:splitName="camera_feature" >
+47            <meta-data
+47-->[androidx.camera:camera-camera2:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\74ea214b7318d90be22d26a68fc89a15\transformed\camera-camera2-1.3.3\AndroidManifest.xml:30:13-32:89
+48                android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER"
+48-->[androidx.camera:camera-camera2:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\74ea214b7318d90be22d26a68fc89a15\transformed\camera-camera2-1.3.3\AndroidManifest.xml:31:17-103
+49                android:value="androidx.camera.camera2.Camera2Config$DefaultProvider" />
+49-->[androidx.camera:camera-camera2:1.3.3] C:\Users\haric\.gradle\caches\8.13\transforms\74ea214b7318d90be22d26a68fc89a15\transformed\camera-camera2-1.3.3\AndroidManifest.xml:32:17-86
+50        </service>
+51    </application>
+52
+53</manifest>

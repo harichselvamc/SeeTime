@@ -7,6 +7,7 @@ import com.harichselvamc.seetime.BuildConfig
 import com.harichselvamc.seetime.data.local.AppDatabase
 import com.harichselvamc.seetime.data.local.TimePair
 import com.harichselvamc.seetime.data.local.ZoneCache
+import com.harichselvamc.seetime.data.local.Activity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -84,10 +85,30 @@ class TimeRepository private constructor(context: Context) {
         orderedIds.forEachIndexed { index, id ->
             dao.updateSortOrder(id, index.toLong())
         }
+        }
+
+    /* --------- Activities --------- */
+
+    suspend fun getActivities(): List<Activity> {
+        val list = dao.getActivities()
+        logd(TAG, "getActivities() -> count=${list.size}")
+        return list
+    }
+
+    suspend fun addActivity(
+        label: String,
+        startTimeMillis: Long,
+        endTimeMillis: Long,
+        category: String = "Uncategorized"
+    ): Long {
+        logd(TAG, "addActivity() label=$label startTime=$startTimeMillis endTime=$endTimeMillis category=$category")
+        val activity = Activity(label = label, startTimeMillis = startTimeMillis, endTimeMillis = endTimeMillis, category = category)
+        val id = dao.insert(activity)
+        logd(TAG, "addActivity() inserted id=$id")
+        return id
     }
 
     /* --------- Timezone cache & refresh (local only) --------- */
-
     suspend fun refreshAllZones() = withContext(Dispatchers.IO) {
         val pairs = dao.getPairs()
         logd(TAG, "refreshAllZones() pairs count=${pairs.size}")

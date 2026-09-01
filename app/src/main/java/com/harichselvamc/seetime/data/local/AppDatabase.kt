@@ -6,8 +6,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [TimePair::class, ZoneCache::class],
-    version = 3
+    entities = [TimePair::class, ZoneCache::class, Activity::class],
+    version = 4
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun dao(): TimeDao

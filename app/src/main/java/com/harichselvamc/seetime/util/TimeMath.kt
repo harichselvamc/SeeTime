@@ -13,6 +13,11 @@ import kotlin.math.abs
  */
 object TimeMath {
 
+    private val monthNames = arrayOf(
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    )
+
     /**
      * Format **date + time**, in either 12-hour or 24-hour format depending
      * on [use24Hour], optionally including seconds.
@@ -39,10 +44,7 @@ object TimeMath {
         val minute = cal.get(Calendar.MINUTE)
         val second = cal.get(Calendar.SECOND)
 
-        val monthNames = arrayOf(
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        )
+
         val monthName = monthNames[month.coerceIn(0, 11)]
         val datePart = "%02d %s %04d".format(day, monthName, year)
 
@@ -67,6 +69,16 @@ object TimeMath {
             "%02d:%02d %s".format(hour12, minute, amPm)
         }
         return "$datePart, $timePart"
+    }
+
+    fun getMillisForTimeToday(hour: Int, minute: Int, currentMillis: Long): Long {
+        val calendar = Calendar.getInstance(TimeZone.getDefault())
+        calendar.timeInMillis = currentMillis
+        calendar.set(Calendar.HOUR_OF_DAY, hour)
+        calendar.set(Calendar.MINUTE, minute)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.timeInMillis
     }
 
     /**
@@ -109,4 +121,93 @@ object TimeMath {
 
         return "${formatSide("From", from)} | ${formatSide("To", to)}"
     }
-}
+
+    /**
+     * Format date only (dd Mon yyyy).
+     */
+    fun formatDateOnly(
+        nowUtc: Long,
+        cache: ZoneCache?
+    ): String {
+        if (cache == null) return "--"
+
+        val millis = nowUtc + cache.offsetMinutes * 60_000L
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+        cal.timeInMillis = millis
+
+        val year = cal.get(Calendar.YEAR)
+        val month = cal.get(Calendar.MONTH) // 0-11
+        val day = cal.get(Calendar.DAY_OF_MONTH)
+
+        val monthName = monthNames[month.coerceIn(0, 11)]
+        return "%02d %s %04d".format(day, monthName, year)
+    }
+
+    enum class OverlapCategory {
+        FULL_WORKING,      // Both in 9 AM - 5 PM (hours 9..16)
+        EXTENDED_WORKING,  // One or both in 7 AM - 9 AM or 5 PM - 8 PM
+        OFF_HOURS          // Outside 7 AM - 8 PM
+    }
+
+    data class HourlyOverlapSlot(
+        val localHour: Int,
+        val targetHour: Int,
+        val targetMinute: Int,
+        val category: OverlapCategory,
+        val localDisplay: String,
+        val targetDisplay: String
+    )
+
+    /**
+     * Compute 24-hour overlap grid for a given offset difference in minutes.
+     */
+    fun compute24HourOverlapMatrix(offsetDiffMinutes: Int): List<HourlyOverlapSlot> {
+        val slots = mutableListOf<HourlyOverlapSlot>()
+        for (localH in 0 until 24) {
+            val totalTargetMinutes = (localH * 60 + offsetDiffMinutes)
+            val normalizedTargetMin = ((totalTargetMinutes % 1440) + 1440) % 1440
+            val targetH = normalizedTargetMin / 60
+            val targetM = normalizedTargetMin % 60
+
+            val isLocalWorking = localH in 9..16
+            val isLocalExtended = localH in 7..8 || localH in 17..19
+
+            val isTargetWorking = targetH in 9..16
+            val isTargetExtended = targetH in 7..8 || targetH in 17..19
+
+            val category = when {
+                isLocalWorking && isTargetWorking -> OverlapCategory.FULL_WORKING
+                (isLocalWorking || isLocalExtended) && (isTargetWorking || isTargetExtended) -> OverlapCategory.EXTENDED_WORKING
+                else -> OverlapCategory.OFF_HOURS
+            }
+
+
+
+            slots.add(
+                HourlyOverlapSlot(
+                    localHour = localH,
+                    targetHour = targetH,
+                    targetMinute = targetM,
+                    category = category,
+                    localDisplay = formatH(localH, 0),
+                    targetDisplay = formatH(targetH, targetM)
+                )
+            )
+        }
+        return slots
+    }
+
+    /**
+     * Helper to format hour and minute into a 12-hour string (e.g., "9 AM" or "10:30 PM").
+     */
+    private fun formatH(h: Int, m: Int): String {
+        val ampm = if (h < 12) "AM" else "PM"
+        val h12 = when {
+            h == 0 -> 12
+            h <= 12 -> h
+            else -> h - 12
+        }
+        return if (m == 0) "%d %s".format(h12, ampm) else "%d:%02d %s".format(h12, m, ampm)
+    }
+
+    val systemZoneId: String = TimeZone.getDefault().id

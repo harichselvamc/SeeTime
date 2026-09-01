@@ -173,4 +173,24 @@ class TimeMathTest {
             TimeMath.buildDstText(from, to)
         )
     }
+
+    // ---------- compute24HourOverlapMatrix ----------
+
+    @Test
+    fun `compute24HourOverlapMatrix generates 24 slots with correct categories`() {
+        // Offset diff: +330 minutes (+5:30)
+        val matrix = TimeMath.compute24HourOverlapMatrix(330)
+        assertEquals(24, matrix.size)
+
+        // 10:00 AM local (hour 10) + 5:30 -> 3:30 PM target (hour 15, min 30)
+        val slot10 = matrix[10]
+        assertEquals(10, slot10.localHour)
+        assertEquals(15, slot10.targetHour)
+        assertEquals(30, slot10.targetMinute)
+        assertEquals(TimeMath.OverlapCategory.FULL_WORKING, slot10.category)
+
+        // 11:00 PM local (hour 23) -> Off hours
+        val slot23 = matrix[23]
+        assertEquals(TimeMath.OverlapCategory.OFF_HOURS, slot23.category)
+    }
 }

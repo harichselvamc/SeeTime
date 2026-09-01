@@ -31,4 +31,10 @@ interface TimeDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertCache(cache: ZoneCache)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(activity: Activity): Long
+
+    @Query("SELECT * FROM activities ORDER BY startTimeMillis DESC")
+    suspend fun getActivities(): List<Activity>
 }

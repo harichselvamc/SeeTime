@@ -26,11 +26,13 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SettingsApplications
 import androidx.compose.material.icons.outlined.TravelExplore
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -60,6 +62,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+
 private data class NavTab(
     val label: String,
     val selectedIcon: ImageVector,
@@ -68,9 +71,12 @@ private data class NavTab(
 
 private val tabs = listOf(
     NavTab("Home",      Icons.Filled.Home,          Icons.Outlined.Home),
+    NavTab("Overlap",   Icons.Outlined.GridOn,      Icons.Outlined.GridOn),
     NavTab("Insights",  Icons.Outlined.Analytics,   Icons.Outlined.Analytics),
     NavTab("Reminders", Icons.Filled.Notifications, Icons.Outlined.NotificationsNone),
-    NavTab("Settings",  Icons.Filled.Settings,      Icons.Outlined.SettingsApplications)
+    NavTab("Camera",    Icons.Outlined.TravelExplore, Icons.Outlined.TravelExplore),
+    NavTab("Settings",  Icons.Filled.Settings,      Icons.Outlined.SettingsApplications),
+    NavTab("Activity",  Icons.Outlined.List,        Icons.Outlined.List) // New Activity Review tab
 )
 
 @Composable
@@ -103,9 +109,12 @@ fun SeeTimeApp(
         }
     }
 
+
     if (showWhatsNew) {
         AlertDialog(
             onDismissRequest = onWhatsNewDismissed,
+            shape = MaterialTheme.shapes.large,
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text("What's New") },
             text = { Text("Enjoy the latest features and bug fixes!") },
             confirmButton = {
@@ -127,8 +136,8 @@ fun SeeTimeApp(
             ) {
                 PlanningBanner(
                     offsetMinutes = timeOffset,
-                    onOpenSheet = { showTimeTravelSheet = true },
-                    onGoLive    = { viewModel.resetToLive() }
+                    onOpenSheet = remember { { showTimeTravelSheet = true } },
+                    onGoLive    = remember { { viewModel.resetToLive() } }
                 )
             }
 
@@ -147,9 +156,11 @@ fun SeeTimeApp(
                             startWithAddDialog = startWithAddDialog,
                             onOpenTimeTravelSheet = { showTimeTravelSheet = true }
                         )
-                        1 -> InsightsScreen(viewModel = viewModel)
-                        2 -> RemindersScreen(viewModel = viewModel)
-                        3 -> SettingsScreen(
+                        1 -> MeetingOverlapScreen(viewModel = viewModel)
+                        2 -> InsightsScreen(viewModel = viewModel)
+                        3 -> RemindersScreen(viewModel = viewModel)
+                        4 -> CameraOverlayScreen(timeViewModel = viewModel)
+                        5 -> SettingsScreen(
                             use24HourFormat     = use24Hour,
                             onToggle24HourFormat = viewModel::setUse24HourFormat,
                             showSeconds          = showSecs,

@@ -35,6 +35,8 @@ class MainActivity : ComponentActivity() {
     private val updateRequestCode = 100
     private var updateDownloaded = mutableStateOf(false)
 
+    private val settingsRepo: SettingsRepository by lazy { SettingsRepository.getInstance(applicationContext) }
+
     private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
         if (state.installStatus() == InstallStatus.DOWNLOADED) {
             updateDownloaded.value = true
@@ -59,9 +61,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             SeeTimeTheme {
                 val vm: TimeViewModel = viewModel()
-                val settingsRepo = androidx.compose.runtime.remember {
-                    SettingsRepository.getInstance(applicationContext)
-                }
+                val settingsRepo = androidx.compose.runtime.remember { settingsRepo }
                 val onboardingCompleted by settingsRepo.onboardingCompleted.collectAsState(initial = false)
                 
                 val currentVersionCode = BuildConfig.VERSION_CODE

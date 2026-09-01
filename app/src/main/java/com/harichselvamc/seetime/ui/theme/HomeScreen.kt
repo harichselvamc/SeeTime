@@ -162,9 +162,9 @@ fun HomeScreen(
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor   = MaterialTheme.colorScheme.onPrimary,
-                shape          = RoundedCornerShape(16.dp)
+                shape          = MaterialTheme.shapes.large
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add time pair")
+                Icon(Icons.Default.Add, contentDescription = "Add activity")
             }
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -268,13 +268,15 @@ fun HomeScreen(
                             DraggableTimePairCard(
                                 ui            = ui,
                                 index         = index,
-                                onEdit        = { editingPair = ui; showDialog = true },
-                                onDelete      = { pendingDeletePair = ui },
-                                onMove        = { from, delta ->
-                                    val to = (from + delta).coerceIn(0, state.pairs.lastIndex)
-                                    if (from != to) viewModel.movePair(from, to)
-                                },
-                                onSetReminder = { smartReminderPair = ui },
+                                 onEdit        = remember { { editingPair = ui; showDialog = true } },
+                                 onDelete      = remember { { pendingDeletePair = ui } },
+                                 onMove        = remember(viewModel, state.pairs.size) {
+                                     { from, delta ->
+                                         val to = (from + delta).coerceIn(0, state.pairs.lastIndex)
+                                         if (from != to) viewModel.movePair(from, to)
+                                     }
+                                 },
+                                 onSetReminder = remember { { smartReminderPair = ui } },
                                 modifier      = Modifier.animateItem(
                                     fadeInSpec    = null,
                                     fadeOutSpec   = null,
@@ -301,16 +303,14 @@ fun HomeScreen(
     }
 
     if (showDialog) {
-        AddTimePairDialog(
-            onDismiss    = { showDialog = false; editingPair = null },
-            onSave       = { from, to, label ->
-                if (editingPair == null) viewModel.addPair(from, to, label)
-                else viewModel.editPair(editingPair!!.id, from, to, label)
+        // Use AddActivityDialog for now, potentially adding a choice later for TimePair or Activity
+        AddActivityDialog(
+            onDismiss = { showDialog = false; editingPair = null },
+            onSave = { startTime, endTime, label ->
+                viewModel.addActivity(label, startTime, endTime)
+                showDialog = false // Dismiss after saving
             },
-            initialFrom  = editingPair?.fromZone ?: "Asia/Kolkata",
-            initialTo    = editingPair?.toZone   ?: "Europe/London",
-            initialLabel = editingPair?.label    ?: "",
-            title        = if (editingPair == null) "Add Time Pair" else "Edit Time Pair"
+            initialLabel = editingPair?.label ?: "" // Pass label if editing, otherwise empty
         )
     }
 
@@ -457,12 +457,7 @@ private fun DraggableTimePairCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(
-                elevation  = 3.dp,
-                shape      = MaterialTheme.shapes.medium,
-                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-                spotColor    = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
-            )
+
             .pointerInput(ui.id) {
                 detectDragGesturesAfterLongPress(
                     onDrag = { change, dragAmount ->
@@ -480,7 +475,7 @@ private fun DraggableTimePairCard(
             },
         shape  = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column {
             // ── Gradient Header ──

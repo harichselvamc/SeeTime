@@ -513,19 +513,21 @@ private fun PairInsightCard(
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TextButton(onClick = {
-                            val intent = CalendarHelper.createCalendarEventIntent(
-                                title = "${slot.title} (${shortZone(ui.fromZone)} & ${shortZone(ui.toZone)})",
-                                description = "Slot: ${slot.localTime} local / ${slot.targetTime} remote",
-                                startMillis = System.currentTimeMillis() + 3_600_000L,
-                                endMillis = System.currentTimeMillis() + 7_200_000L,
-                                timeZone = ui.toZone
-                            )
-                            try { context.startActivity(intent) } catch (_: Exception) {}
+                        TextButton(onClick = remember(ui, slot, context) {
+                            {
+                                val intent = CalendarHelper.createCalendarEventIntent(
+                                    title = "${slot.title} (${shortZone(ui.fromZone)} & ${shortZone(ui.toZone)})",
+                                    description = "Slot: ${slot.localTime} local / ${slot.targetTime} remote",
+                                    startMillis = System.currentTimeMillis() + 3_600_000L,
+                                    endMillis = System.currentTimeMillis() + 7_200_000L,
+                                    timeZone = ui.toZone
+                                )
+                                try { context.startActivity(intent) } catch (_: Exception) {}
+                            }
                         }) {
                             Icon(Icons.Outlined.CalendarMonth, null, modifier = Modifier.size(18.dp))
                         }
-                        TextButton(onClick = onSetReminder) {
+                        TextButton(onClick = remember(onSetReminder) { { onSetReminder() } }) {
                             Icon(Icons.Outlined.AddAlarm, null, modifier = Modifier.size(18.dp))
                         }
                     }
