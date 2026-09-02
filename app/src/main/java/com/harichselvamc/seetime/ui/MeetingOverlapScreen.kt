@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.harichselvamc.seetime.ui
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -74,9 +75,14 @@ import com.harichselvamc.seetime.util.CalendarHelper
 import com.harichselvamc.seetime.util.TimeMath
 import com.harichselvamc.seetime.util.TimeMath.OverlapCategory
 import java.time.LocalTime
+
 import com.harichselvamc.seetime.ui.TimeViewModel
 import com.harichselvamc.seetime.ui.TimePairUi
 import com.harichselvamc.seetime.ui.SmartReminderDialog
+
+
+private fun shortZone(tz: String): String =
+    tz.substringAfterLast('/').replace('_', ' ')
 
 @Composable
 fun MeetingOverlapScreen(
@@ -85,6 +91,7 @@ fun MeetingOverlapScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
+    var selectedViewMode by remember { mutableIntStateOf(0) } // 0 = Matrix, 1 = Flight & Solar Scrubber
     var selectedPairIndex by remember { mutableIntStateOf(0) }
     var selectedHour by remember { mutableIntStateOf(LocalTime.now().hour) }
     var activeReminderPair by remember { mutableStateOf<TimePairUi?>(null) }
@@ -92,8 +99,17 @@ fun MeetingOverlapScreen(
     LaunchedEffect(Unit) {
         viewModel.startTicker()
     }
+    
+    val ui = state.pairs.getOrNull(selectedPairIndex) ?: state.pairs.firstOrNull()
 
-
+    if (selectedViewMode == 1) {
+        FlightTimezoneScrubberScreen(
+            viewModel = viewModel,
+            modifier = Modifier.fillMaxSize(),
+            onBack = { selectedViewMode = 0 }
+        )
+        return
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -108,21 +124,37 @@ fun MeetingOverlapScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Outlined.GridOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        text = "World Meeting Overlap Matrix",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.GridOn,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "Meeting Overlap Matrix",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Scrubber Switch Chip
+                    FilterChip(
+                        selected = false,
+                        onClick = { selectedViewMode = 1 },
+                        label = { Text("Flight Scrubber ✈") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        )
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
@@ -182,149 +214,165 @@ fun MeetingOverlapScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Time pair filter selector chips
-                    if (state.pairs.size > 1) {
-                        item {
-                            Text(
-                                "Select Time Pair",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(state.pairs.size) { idx ->
-                                    val pair = state.pairs[idx]
-                                    val isSelected = idx == selectedPairIndex
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { selectedPairIndex = idx },
-                                        label = {
-                                            Text(
-                                                if (pair.label.isNotBlank()) pair.label
-                                                else "${shortZone(pair.fromZone)} → ${shortZone(pair.toZone)}"
-                                            )
-                                        },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
+                    if (ui != null) {
+                        item { // Wrap all ui-dependent content in a single item
+                            Column {
+                                // Time pair filter selector chips
+                                if (state.pairs.size > 1) {
+                                    Text(
+                                        "Select Time Pair",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
-                                }
-                            }
-                        }
-                    }
-
-                    selectedPair?.let { ui ->
-                        val matrix = remember(ui.offsetDifferenceMinutes) {
-                            TimeMath.compute24HourOverlapMatrix(ui.offsetDifferenceMinutes)
-                        }
-
-                        val fullCount = remember(matrix) { matrix.count { it.category == OverlapCategory.FULL_WORKING } }
-                        val extCount  = remember(matrix) { matrix.count { it.category == OverlapCategory.EXTENDED_WORKING } }
-                        val offCount  = remember(matrix) { matrix.count { it.category == OverlapCategory.OFF_HOURS } }
-
-                        // Overlap KPI Summary Card
-                        item {
-                            PairSummaryCard(
-                                ui = ui,
-                                fullCount = fullCount,
-                                extCount = extCount,
-                                offCount = offCount
-                            )
-                        }
-
-                        // 24-Hour Visual Matrix Grid
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = MaterialTheme.shapes.medium,
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Spacer(Modifier.height(6.dp))
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.padding(bottom = 6.dp) // Add padding to separate from next card
                                     ) {
-                                        Text(
-                                            "24-Hour Interactive Grid",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            "Tap cell to inspect",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-
-                                    Spacer(Modifier.height(12.dp))
-
-                                    // 24 Hour Grid (6 columns x 4 rows)
-                                    Box(modifier = Modifier.height(280.dp)) {
-                                        LazyVerticalGrid(
-                                            columns = GridCells.Fixed(6),
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                                            modifier = Modifier.fillMaxSize(),
-                                            userScrollEnabled = false
-                                        ) {
-                                            items(matrix) { slot ->
-                                                val isSelected = slot.localHour == selectedHour
-                                                val isCurrentHour = slot.localHour == LocalTime.now().hour
-
-                                                GridCellItem(
-                                                    slot = slot,
-                                                    isSelected = isSelected,
-                                                    isCurrentHour = isCurrentHour,
-                                                    onClick = { selectedHour = slot.localHour }
+                                        items(state.pairs.size) { idx ->
+                                            val pair = state.pairs[idx]
+                                            val isSelected = idx == selectedPairIndex
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedPairIndex = idx },
+                                                label = {
+                                                    Text(
+                                                        if (pair.label.isNotBlank()) pair.label
+                                                        else "${shortZone(pair.fromZone)} → ${shortZone(pair.toZone)}"
+                                                    )
+                                                },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                                                 )
-                                            }
+                                            )
                                         }
                                     }
+                                }
 
-                                    Spacer(Modifier.height(12.dp))
+                                val matrix = remember(ui.offsetDifferenceMinutes) {
+                                    TimeMath.compute24HourOverlapMatrix(ui.offsetDifferenceMinutes)
+                                }
 
-                                    // Legend
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        LegendChip(
-                                            color = Color(0xFF2E7D32),
-                                            label = "Full (9-5)"
-                                        )
-                                        LegendChip(
-                                            color = Color(0xFFF57F17),
-                                            label = "Extended"
-                                        )
-                                        LegendChip(
-                                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                                            label = "Off Hours"
-                                        )
-                                        LegendChip(
-                                            color = MaterialTheme.colorScheme.error,
-                                            label = "Current Hour"
-                                        )
+                                val fullCount = remember(matrix) { matrix.count { it.category == OverlapCategory.FULL_WORKING } }
+                                val extCount  = remember(matrix) { matrix.count { it.category == OverlapCategory.EXTENDED_WORKING } }
+                                val offCount  = remember(matrix) { matrix.count { it.category == OverlapCategory.OFF_HOURS } }
+
+                                // Overlap KPI Summary Card
+                                PairSummaryCard(
+                                    ui = ui,
+                                    fullCount = fullCount,
+                                    extCount = extCount,
+                                    offCount = offCount
+                                )
+
+                                Spacer(Modifier.height(20.dp))
+
+                                // 24-Hour Visual Matrix Grid
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.medium,
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                "24-Hour Interactive Grid",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                "Tap cell to inspect",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        Spacer(Modifier.height(12.dp))
+
+                                        // 24 Hour Grid (6 columns x 4 rows)
+                                        Box(modifier = Modifier.height(280.dp)) {
+                                            LazyVerticalGrid(
+                                                columns = GridCells.Fixed(6),
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                                modifier = Modifier.fillMaxSize(),
+                                                userScrollEnabled = false
+                                            ) {
+                                                items(matrix) { slot ->
+                                                    val isSelected = slot.localHour == selectedHour
+                                                    val isCurrentHour = slot.localHour == LocalTime.now().hour
+
+                                                    GridCellItem(
+                                                        slot = slot,
+                                                        isSelected = isSelected,
+                                                        isCurrentHour = isCurrentHour,
+                                                        onClick = { selectedHour = slot.localHour }
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(Modifier.height(12.dp))
+
+                                        // Legend
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            LegendChip(
+                                                color = Color(0xFF2E7D32),
+                                                label = "Full (9-5)"
+                                            )
+                                            LegendChip(
+                                                color = Color(0xFFF57F17),
+                                                label = "Extended"
+                                            )
+                                            LegendChip(
+                                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                                label = "Off Hours"
+                                            )
+                                            LegendChip(
+                                                color = MaterialTheme.colorScheme.error,
+                                                label = "Current Hour"
+                                            )
+                                        }
                                     }
                                 }
+
+                                Spacer(Modifier.height(20.dp))
+
+                                // Selected Slot Detail & Actions
+                                val selectedSlot = matrix.find { it.localHour == selectedHour } ?: matrix[0]
+                                SelectedSlotCard(
+                                    ui = ui,
+                                    slot = selectedSlot,
+                                    context = context,
+                                    onSetReminder = { activeReminderPair = ui }
+                                )
                             }
                         }
-
-                        // Selected Slot Detail & Actions
-                        item {
-                            val selectedSlot = matrix.find { it.localHour == selectedHour } ?: matrix[0]
-                            SelectedSlotCard(
-                                ui = ui,
-                                slot = selectedSlot,
-                                context = context,
-                                onSetReminder = { activeReminderPair = ui }
-                            )
+                    } else {
+                        item { // Fallback for when ui is null
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "No time pair selected for overlap matrix.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(20.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -427,7 +475,7 @@ private fun KpiStatBox(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Bold,
                 color = contentColor,
                 fontSize = 11.sp,
                 maxLines = 1
@@ -643,5 +691,21 @@ private fun SelectedSlotCard(
     }
 }
 
-private fun shortZone(tz: String): String =
-    tz.substringAfterLast('/').replace('_', ' ')
+@Composable
+private fun LegendChip(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 10.sp
+        )
+    }
+}

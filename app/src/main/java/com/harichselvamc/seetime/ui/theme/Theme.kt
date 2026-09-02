@@ -29,9 +29,16 @@ private val LightColors = lightColorScheme(
     onSurface = SlateText,
     surfaceVariant = LightSurfaceVar,
     onSurfaceVariant = SlateText,
+    surfaceTint = Cobalt60,
+    inverseSurface = InverseSurfaceLight,
+    inverseOnSurface = InverseOnSurfaceLight,
+    inversePrimary = Cobalt80,
     outline = LightOutline,
+    outlineVariant = LightOutlineVariant,
     error = ErrorCoral,
-    onError = White
+    onError = White,
+    errorContainer = LightErrorContainer,
+    onErrorContainer = LightOnErrorContainer
 )
 
 private val DarkColors = darkColorScheme(
@@ -53,9 +60,16 @@ private val DarkColors = darkColorScheme(
     onSurface = White,
     surfaceVariant = DarkSurfaceVar,
     onSurfaceVariant = SlateTextLight,
+    surfaceTint = Cobalt60,
+    inverseSurface = InverseSurfaceDark,
+    inverseOnSurface = InverseOnSurfaceDark,
+    inversePrimary = Cobalt40,
     outline = DarkOutline,
+    outlineVariant = DarkOutlineVariant,
     error = ErrorCoral,
-    onError = White
+    onError = White,
+    errorContainer = DarkErrorContainer,
+    onErrorContainer = DarkOnErrorContainer
 )
 
 @Composable

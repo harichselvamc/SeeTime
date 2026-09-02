@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Flame Silhouette -->
+    <path
+        android:fillColor="#E65100"
+        android:pathData="M54,20 C62,32 76,44 76,62 C76,75 66,86 54,86 C42,86 32,75 32,62 C32,46 44,34 54,20 Z" />
+    <!-- Inner Flame Tongue -->
+    <path
+        android:fillColor="#FF9100"
+        android:pathData="M54,30 C60,40 70,50 70,64 C70,73 63,80 54,80 C45,80 38,73 38,64 C38,52 48,42 54,30 Z" />
+    <!-- Core Bright Flame -->
+    <path
+        android:fillColor="#FFD600"
+        android:pathData="M54,42 C58,50 64,56 64,66 C64,72 60,76 54,76 C48,76 44,72 44,66 C44,58 50,50 54,42 Z" />
+    <!-- Clock ring inside flame -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:pathData="M70,60 A16,16 0 1,1 38,60 A16,16 0 1,1 70,60 Z" />
+    <!-- Hour hand -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,60 L47,56" />
+    <!-- Minute hand -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,60 L62,52" />
+    <!-- Center pivot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M56,60 A2,2 0 1,1 52,60 A2,2 0 1,1 56,60 Z" />
+</vector>

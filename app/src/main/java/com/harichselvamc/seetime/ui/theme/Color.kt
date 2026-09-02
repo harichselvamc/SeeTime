@@ -17,15 +17,23 @@ val Amber60  = Color(0xFFF59E0B)
 val Cyan60   = Color(0xFF06B6D4)
 
 // ── One UI Slate Surfaces ────────────────────────────────────────────
-val DarkBg         = Color(0xFF0B0F19)     // Ultra-dark One UI background
-val DarkSurface    = Color(0xFF161B26)     // Samsung Clock card background
-val DarkSurfaceVar = Color(0xFF222938)     // Card inner container
-val DarkOutline    = Color(0xFF333D52)
+val DarkBg             = Color(0xFF0B0F19)     // Ultra-dark One UI background
+val DarkSurface        = Color(0xFF161B26)     // Samsung Clock card background
+val DarkSurfaceVar     = Color(0xFF222938)     // Card inner container
+val DarkOutline        = Color(0xFF333D52)
+val DarkOutlineVariant = Color(0xFF475569)
 
-val LightBg         = Color(0xFFF3F4F6)
-val LightSurface    = Color(0xFFFFFFFF)
-val LightSurfaceVar = Color(0xFFE5E7EB)
-val LightOutline    = Color(0xFFD1D5DB)
+val LightBg             = Color(0xFFF3F4F6)
+val LightSurface        = Color(0xFFFFFFFF)
+val LightSurfaceVar     = Color(0xFFE5E7EB)
+val LightOutline        = Color(0xFFD1D5DB)
+val LightOutlineVariant = Color(0xFF94A3B8)
+
+// ── Inverse Surfaces ─────────────────────────────────────────────────
+val InverseSurfaceDark    = Color(0xFFF1F5F9)
+val InverseOnSurfaceDark  = Color(0xFF0F172A)
+val InverseSurfaceLight   = Color(0xFF1E293B)
+val InverseOnSurfaceLight = Color(0xFFF8FAFC)
 
 // ── Neutrals ─────────────────────────────────────────────────────────
 val White          = Color(0xFFFFFFFF)
@@ -34,10 +42,14 @@ val SlateText      = Color(0xFF0F172A)
 val SlateTextLight = Color(0xFF94A3B8)
 
 // ── Semantic Colors ──────────────────────────────────────────────────
-val SuccessGreen = Color(0xFF10B981)
-val WarningAmber = Color(0xFFF59E0B)
-val ErrorCoral   = Color(0xFFEF4444)
-val InfoBlue     = Color(0xFF3B82F6)
+val SuccessGreen         = Color(0xFF10B981)
+val WarningAmber         = Color(0xFFF59E0B)
+val ErrorCoral           = Color(0xFFEF4444)
+val DarkErrorContainer   = Color(0xFF7F1D1D)
+val DarkOnErrorContainer = Color(0xFFFEE2E2)
+val LightErrorContainer  = Color(0xFFFEE2E2)
+val LightOnErrorContainer= Color(0xFF991B1B)
+val InfoBlue             = Color(0xFF3B82F6)
 
 // ── Gradients ────────────────────────────────────────────────────────
 val GradientStart = Color(0xFF3861FB)  // One UI Cobalt

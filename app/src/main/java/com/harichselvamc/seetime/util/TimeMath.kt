@@ -159,6 +159,19 @@ object TimeMath {
     )
 
     /**
+     * Helper to format hour and minute into a 12-hour string (e.g., "9 AM" or "10:30 PM").
+     */
+    private fun formatH(h: Int, m: Int): String {
+        val ampm = if (h < 12) "AM" else "PM"
+        val h12 = when {
+            h == 0 -> 12
+            h <= 12 -> h
+            else -> h - 12
+        }
+        return if (m == 0) "%d %s".format(h12, ampm) else "%d:%02d %s".format(h12, m, ampm)
+    }
+
+    /**
      * Compute 24-hour overlap grid for a given offset difference in minutes.
      */
     fun compute24HourOverlapMatrix(offsetDiffMinutes: Int): List<HourlyOverlapSlot> {
@@ -181,8 +194,6 @@ object TimeMath {
                 else -> OverlapCategory.OFF_HOURS
             }
 
-
-
             slots.add(
                 HourlyOverlapSlot(
                     localHour = localH,
@@ -197,17 +208,5 @@ object TimeMath {
         return slots
     }
 
-    /**
-     * Helper to format hour and minute into a 12-hour string (e.g., "9 AM" or "10:30 PM").
-     */
-    private fun formatH(h: Int, m: Int): String {
-        val ampm = if (h < 12) "AM" else "PM"
-        val h12 = when {
-            h == 0 -> 12
-            h <= 12 -> h
-            else -> h - 12
-        }
-        return if (m == 0) "%d %s".format(h12, ampm) else "%d:%02d %s".format(h12, m, ampm)
-    }
-
     val systemZoneId: String = TimeZone.getDefault().id
+}

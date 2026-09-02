@@ -20,3 +20,4 @@ keystore.properties
 *.keystore
 /keystore/
 /.idea
+/.kotlin

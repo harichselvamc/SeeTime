@@ -90,7 +90,7 @@ android {
         compose = true
         buildConfig = true
     }
-    dynamicFeatures += setOf(":camera_feature")
+
 
     packaging {
         resources {
@@ -145,7 +145,7 @@ dependencies {
 
     // Google Play In-App Updates
     implementation("com.google.android.play:app-update-ktx:2.1.0")
-    implementation("com.google.android.play:feature-delivery:2.1.0")
+
 
 
 }

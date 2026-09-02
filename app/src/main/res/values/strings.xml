@@ -8,4 +8,7 @@
     <string name="shortcut_report_issue_long">Report an issue by email</string>
 
     <string name="time_widget_description">Shows your first saved time pair on the home screen.</string>
+    <string name="widget_streak_overlap_desc">2x2 Blazing Streak &amp; Timezone Overlap Countdown Widget</string>
+    <string name="widget_quick_log_desc">1x1 Quick Flame Activity Logger Widget</string>
+    <string name="widget_command_center_desc">4x2 Dual-Clock Command Center &amp; Overlap Widget</string>
 </resources>

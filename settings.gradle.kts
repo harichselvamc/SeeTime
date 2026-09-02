@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "See Time"
-include(":app", ":camera_feature")
+include(":app")

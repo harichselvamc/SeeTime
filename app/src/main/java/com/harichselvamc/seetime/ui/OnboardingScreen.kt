@@ -158,10 +158,10 @@ fun OnboardingScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    painter = androidx.compose.ui.res.painterResource(id = com.harichselvamc.seetime.R.drawable.ic_launcher_foreground),
+                                    imageVector = androidx.compose.material.icons.Icons.Filled.Schedule,
                                     contentDescription = "SeeTime Logo",
                                     tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(80.dp)
+                                    modifier = Modifier.size(60.dp)
                                 )
                             }
                         } else {

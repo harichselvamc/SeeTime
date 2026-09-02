@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddAlarm
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.AlertDialog
@@ -34,13 +35,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,17 +50,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Observer
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import androidx.work.workDataOf
+import com.harichselvamc.seetime.alarm.AlarmScheduler
 import com.harichselvamc.seetime.data.AlarmRepository
 import com.harichselvamc.seetime.reminder.TimeReminderWorker
-import java.time.Duration
-import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 data class AlarmUi(
     val id: UUID,
@@ -87,7 +82,7 @@ fun RemindersScreen(
     var cancelTarget by remember { mutableStateOf<AlarmUi?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    // Sync from WorkManager metadata to repository on load
+    // Sync from WorkManager metadata to repository on load (for legacy alarms)
     DisposableEffect(workManager) {
         val liveData = workManager.getWorkInfosByTagLiveData(TimeReminderWorker.TAG)
         val observer = Observer<List<WorkInfo>> { infos ->
@@ -120,15 +115,11 @@ fun RemindersScreen(
                     )
                 }
 
-            // Sync with repo: Only auto-add if enqueued & active, or update state if present in repo.
-            // Do NOT re-add cancelled/deleted alarms from historical WorkManager logs!
             val existingInRepo = alarmRepo.getAlarms().associateBy { it.id }
             parsedList.forEach { workAlarm ->
                 if (existingInRepo.containsKey(workAlarm.id)) {
-                    // Update enabled status from WorkManager runtime state
                     alarmRepo.updateAlarm(workAlarm)
                 } else if (workAlarm.isEnabled) {
-                    // Only insert new external alarms if actively enqueued
                     alarmRepo.addAlarm(workAlarm)
                 }
             }
@@ -142,52 +133,30 @@ fun RemindersScreen(
 
     fun handleToggle(alarm: AlarmUi, enabled: Boolean) {
         if (!enabled) {
-            // Cancel in WorkManager
+            // Cancel via AlarmManager
+            AlarmScheduler.cancelAlarm(context, alarm.id)
             workManager.cancelWorkById(alarm.id)
             workManager.pruneWork()
             val updated = alarm.copy(isEnabled = false)
             alarmRepo.updateAlarm(updated)
             alarms = alarmRepo.getAlarms()
         } else {
-            // Re-enqueue in WorkManager
-            try {
-                val parts = alarm.targetTime.split(":")
-                val h = parts.getOrNull(0)?.toIntOrNull() ?: 9
-                val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
+            // Schedule via AlarmManager
+            val parts = alarm.targetTime.split(":")
+            val h = parts.getOrNull(0)?.toIntOrNull() ?: 9
+            val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
 
-                val zoneId = ZoneId.of(alarm.zone)
-                val nowInZone = ZonedDateTime.now(zoneId)
-                var targetInZone = nowInZone.withHour(h).withMinute(m).withSecond(0).withNano(0)
-                if (targetInZone.isBefore(nowInZone)) {
-                    targetInZone = targetInZone.plusDays(1)
-                }
-                val delayMillis = Duration.between(nowInZone, targetInZone).toMillis()
+            val nextTrigger = AlarmScheduler.calculateNextTriggerMillis(
+                targetHour = h,
+                targetMinute = m,
+                targetZone = alarm.zone,
+                repeatDays = alarm.repeatDays
+            )
 
-                val targetTimeStr = String.format("%02d:%02d", h, m)
-                val firesAtEpoch = System.currentTimeMillis() + delayMillis
-                val scheduledAtEpoch = System.currentTimeMillis()
-                val daysStr = alarm.repeatDays.sorted().joinToString(",")
-
-                val metaTag = "meta::${alarm.title}|$targetTimeStr|${alarm.zone}|$firesAtEpoch|$scheduledAtEpoch|$daysStr|true"
-
-                val workRequest = OneTimeWorkRequestBuilder<TimeReminderWorker>()
-                    .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
-                    .addTag(TimeReminderWorker.TAG)
-                    .addTag(metaTag)
-                    .setInputData(
-                        workDataOf(
-                            "title" to alarm.title,
-                            "message" to "Meeting at $targetTimeStr in ${shortZone(alarm.zone)}."
-                        )
-                    )
-                    .build()
-
-                workManager.enqueue(workRequest)
-                val updated = alarm.copy(id = workRequest.id, isEnabled = true, firesAt = firesAtEpoch)
-                alarmRepo.deleteAlarm(alarm.id)
-                alarmRepo.addAlarm(updated)
-                alarms = alarmRepo.getAlarms()
-            } catch (_: Exception) {}
+            val updated = alarm.copy(isEnabled = true, firesAt = nextTrigger)
+            alarmRepo.updateAlarm(updated)
+            AlarmScheduler.scheduleAlarm(context, updated)
+            alarms = alarmRepo.getAlarms()
         }
     }
 
@@ -208,10 +177,10 @@ fun RemindersScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.AddAlarm,
-                        contentDescription = "Add Reminder"
+                        contentDescription = "Add Smart Alarm"
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add Reminder", fontWeight = FontWeight.Bold)
+                    Text("Add Alarm", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -232,14 +201,14 @@ fun RemindersScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Reminders",
+                        "Smart Alarms",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        "Recurring meeting alarms & timezone alerts",
+                        "Exact target timezone alarms & meeting alerts",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -251,7 +220,7 @@ fun RemindersScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.AddAlarm,
-                        contentDescription = "Add Reminder",
+                        contentDescription = "Add Alarm",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .padding(10.dp)
@@ -260,140 +229,141 @@ fun RemindersScreen(
                 }
             }
 
-        if (alarms.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(40.dp)
+            if (alarms.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(96.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(40.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.NotificationsNone,
-                            contentDescription = null,
-                            modifier = Modifier.size(44.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        "No Alarms Set",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Open any time pair card on the Home tab,\ntap ⋮ and choose \"Set Smart Reminder\".",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Box(
+                            modifier = Modifier
+                                .size(96.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Outlined.AddAlarm,
+                                imageVector = Icons.Outlined.NotificationsNone,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(44.dp),
+                                tint = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Alarms sound even when the device is locked",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            "No Alarms Set",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Set alarms synchronized to any target timezone.\nTap '+ Add Alarm' or choose 'Set Smart Reminder' from Home.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Alarm,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Guaranteed to sound even in Doze / sleep mode",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
                 }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    top = 16.dp,
-                    bottom = 120.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(alarms, key = { it.id }) { alarm ->
-                    SamsungAlarmCard(
-                        alarm = alarm,
-                        onToggleEnabled = remember(alarm) { { enabled ->
-                            handleToggle(alarm, enabled)
-                        } },
-                        onDelete = remember(alarm) { { cancelTarget = alarm } }
-                    )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        top = 16.dp,
+                        bottom = 120.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(alarms, key = { it.id }) { alarm ->
+                        SamsungAlarmCard(
+                            alarm = alarm,
+                            onToggleEnabled = remember(alarm) { { enabled ->
+                                handleToggle(alarm, enabled)
+                            } },
+                            onDelete = remember(alarm) { { cancelTarget = alarm } }
+                        )
+                    }
                 }
             }
         }
-    }
 
-    if (showAddDialog) {
-        val defaultFrom = homePairs.firstOrNull()?.fromZone ?: "Asia/Kolkata"
-        val defaultTo   = homePairs.firstOrNull()?.toZone   ?: "Europe/London"
-        SmartReminderDialog(
-            fromZone  = defaultFrom,
-            toZone    = defaultTo,
-            onDismiss = {
-                showAddDialog = false
-                alarms = alarmRepo.getAlarms()
-            }
-        )
-    }
-
-    cancelTarget?.let { alarm ->
-        AlertDialog(
-            onDismissRequest = { cancelTarget = null },
-            shape = RoundedCornerShape(24.dp),
-            title = {
-                Text(
-                    "Delete Alarm?",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    "\"${alarm.title}\" scheduled for ${alarm.targetTime} will be permanently removed.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    workManager.cancelWorkById(alarm.id)
-                    workManager.pruneWork()
-                    alarmRepo.deleteAlarm(alarm.id)
+        if (showAddDialog) {
+            val defaultFrom = homePairs.firstOrNull()?.fromZone ?: "Asia/Kolkata"
+            val defaultTo   = homePairs.firstOrNull()?.toZone   ?: "Europe/London"
+            SmartReminderDialog(
+                fromZone  = defaultFrom,
+                toZone    = defaultTo,
+                onDismiss = {
+                    showAddDialog = false
                     alarms = alarmRepo.getAlarms()
-                    cancelTarget = null
-                }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { cancelTarget = null }) {
-                    Text("Cancel")
+            )
+        }
+
+        cancelTarget?.let { alarm ->
+            AlertDialog(
+                onDismissRequest = { cancelTarget = null },
+                shape = RoundedCornerShape(24.dp),
+                title = {
+                    Text(
+                        "Delete Alarm?",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        "\"${alarm.title}\" scheduled for ${alarm.targetTime} (${shortZone(alarm.zone)}) will be permanently removed.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        AlarmScheduler.cancelAlarm(context, alarm.id)
+                        workManager.cancelWorkById(alarm.id)
+                        workManager.pruneWork()
+                        alarmRepo.deleteAlarm(alarm.id)
+                        alarms = alarmRepo.getAlarms()
+                        cancelTarget = null
+                    }) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { cancelTarget = null }) {
+                        Text("Cancel")
+                    }
                 }
-            }
-        )
-    }
+            )
+        }
     }
 }
 
@@ -419,6 +389,13 @@ private fun SamsungAlarmCard(
             else    -> h - 12
         }
         Pair(String.format("%02d:%02d", h12, m), ampm)
+    }
+
+    val localEquivalent = remember(alarm.targetTime, alarm.zone) {
+        val parts = alarm.targetTime.split(":")
+        val h = parts.getOrNull(0)?.toIntOrNull() ?: 9
+        val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        AlarmScheduler.formatLocalEquivalent(h, m, alarm.zone)
     }
 
     var remainingTimeText by remember(alarm.firesAt, isEnabled) { mutableStateOf("") }
@@ -481,7 +458,8 @@ private fun SamsungAlarmCard(
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
-                        text = "${alarm.title}  ·  ${shortZone(alarm.zone)}",
+                        text = "${alarm.title}  ·  ${shortZone(alarm.zone)}" +
+                                if (localEquivalent.isNotEmpty()) " (Local: $localEquivalent)" else "",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = cardAlpha)

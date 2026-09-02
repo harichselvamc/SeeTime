@@ -15,11 +15,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -35,16 +38,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
-import com.harichselvamc.seetime.reminder.TimeReminderWorker
+import com.harichselvamc.seetime.alarm.AlarmScheduler
+import com.harichselvamc.seetime.data.AlarmRepository
 import java.time.Duration
+import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.concurrent.TimeUnit
+import java.util.UUID
 
 val DAY_LABELS = listOf("M", "T", "W", "T", "F", "S", "S")
 val DAY_FULL_NAMES = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -64,9 +67,9 @@ fun SmartReminderDialog(
     // Selected repeat days (indices 0..6: Mon=0, Sun=6)
     val selectedDays = remember { mutableStateListOf<Int>() }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
-    // Dynamic "fires in" preview calculation
+    // Dynamic "fires in" preview calculation + local equivalent
     val firesInText by remember(targetHour, targetMinute, selectedZone, selectedDays.toList()) {
         derivedStateOf {
             try {
@@ -74,19 +77,28 @@ fun SmartReminderDialog(
                 val m = targetMinute.toIntOrNull() ?: return@derivedStateOf ""
                 if (h !in 0..23 || m !in 0..59) return@derivedStateOf ""
 
-                val zoneId = ZoneId.of(selectedZone)
-                val nowInZone = ZonedDateTime.now(zoneId)
-                var targetInZone = nowInZone.withHour(h).withMinute(m).withSecond(0).withNano(0)
-                if (targetInZone.isBefore(nowInZone)) {
-                    targetInZone = targetInZone.plusDays(1)
-                }
-                val duration = Duration.between(nowInZone, targetInZone)
-                val totalMin = duration.toMinutes()
+                val nextTrigger = AlarmScheduler.calculateNextTriggerMillis(
+                    targetHour = h,
+                    targetMinute = m,
+                    targetZone = selectedZone,
+                    repeatDays = selectedDays.toList()
+                )
+
+                val diff = nextTrigger - System.currentTimeMillis()
+                val totalMin = Math.max(0L, diff / 60_000L)
                 val hrs = totalMin / 60
                 val mins = totalMin % 60
                 val timeStr = if (hrs > 0) "Alarm in ${hrs}h ${mins}m" else "Alarm in ${mins}m"
-                if (selectedDays.isEmpty()) timeStr
-                else "$timeStr · Repeats ${selectedDays.sorted().joinToString(", ") { DAY_FULL_NAMES[it] }}"
+
+                val localEquivalent = AlarmScheduler.formatLocalEquivalent(
+                    targetHour = h,
+                    targetMinute = m,
+                    targetZone = selectedZone
+                )
+
+                val localSuffix = if (localEquivalent.isNotEmpty()) " · Local: $localEquivalent" else ""
+                val repeatSuffix = if (selectedDays.isEmpty()) "" else " · Repeats ${selectedDays.sorted().joinToString(", ") { DAY_FULL_NAMES[it] }}"
+                "$timeStr$localSuffix$repeatSuffix"
             } catch (_: Exception) {
                 ""
             }
@@ -97,11 +109,20 @@ fun SmartReminderDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
         title = {
-            Text(
-                "Set Regular Meeting Alarm",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.Alarm,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(26.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    "Target Timezone Smart Alarm",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -149,7 +170,7 @@ fun SmartReminderDialog(
                 OutlinedTextField(
                     value = reminderTitle,
                     onValueChange = { reminderTitle = it },
-                    label = { Text("Meeting Title") },
+                    label = { Text("Meeting / Alarm Title") },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -271,57 +292,43 @@ fun SmartReminderDialog(
         confirmButton = {
             Button(
                 onClick = remember(reminderTitle, targetHour, targetMinute, selectedZone, selectedDays.toList(), errorText) {
-                    {
+                    myButtonClickListener@ {
                         val h = targetHour.toIntOrNull()
                         val m = targetMinute.toIntOrNull()
                         if (h == null || h !in 0..23 || m == null || m !in 0..59) {
                             errorText = "Please enter a valid hour (0-23) and minute (0-59)."
-                            return
+                            return@myButtonClickListener
                         }
 
                         try {
-                            val zoneId = ZoneId.of(selectedZone)
-                            val nowInZone = ZonedDateTime.now(zoneId)
-                            var targetInZone = nowInZone.withHour(h).withMinute(m).withSecond(0).withNano(0)
-                            if (targetInZone.isBefore(nowInZone)) {
-                                targetInZone = targetInZone.plusDays(1)
-                            }
-                            val delayMillis = Duration.between(nowInZone, targetInZone).toMillis()
+                            val nextTrigger = AlarmScheduler.calculateNextTriggerMillis(
+                                targetHour = h,
+                                targetMinute = m,
+                                targetZone = selectedZone,
+                                repeatDays = selectedDays.toList()
+                            )
 
                             val finalTitle = if (reminderTitle.isBlank()) "SeeTime Meeting" else reminderTitle.trim()
                             val targetTimeStr = String.format("%02d:%02d", h, m)
-                            val firesAtEpoch = System.currentTimeMillis() + delayMillis
                             val scheduledAtEpoch = System.currentTimeMillis()
-                            val daysStr = selectedDays.sorted().joinToString(",")
-
-                            // meta format: title|targetTime|zone|firesAt|scheduledAt|repeatDays|enabled
-                            val metaTag = "meta::${finalTitle}|$targetTimeStr|${selectedZone}|$firesAtEpoch|$scheduledAtEpoch|$daysStr|true"
-
-                            val workRequest = OneTimeWorkRequestBuilder<TimeReminderWorker>()
-                                .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
-                                .addTag(TimeReminderWorker.TAG)
-                                .addTag(metaTag)
-                                .setInputData(
-                                    workDataOf(
-                                        "title" to finalTitle,
-                                        "message" to "Meeting at $targetTimeStr in ${shortZoneName(selectedZone)}."
-                                    )
-                                )
-                                .build()
 
                             val newAlarm = AlarmUi(
-                                id = workRequest.id,
+                                id = UUID.randomUUID(),
                                 title = finalTitle,
                                 targetTime = targetTimeStr,
                                 zone = selectedZone,
                                 scheduledAt = scheduledAtEpoch,
-                                firesAt = firesAtEpoch,
+                                firesAt = nextTrigger,
                                 repeatDays = selectedDays.sorted(),
                                 isEnabled = true
                             )
-                            com.harichselvamc.seetime.data.AlarmRepository.getInstance(context).addAlarm(newAlarm)
 
-                            WorkManager.getInstance(context).enqueue(workRequest)
+                            // Save to Repository
+                            AlarmRepository.getInstance(context).addAlarm(newAlarm)
+
+                            // Schedule via AlarmManager
+                            AlarmScheduler.scheduleAlarm(context, newAlarm)
+
                             onDismiss()
                         } catch (e: Exception) {
                             errorText = "Failed: ${e.message}"
