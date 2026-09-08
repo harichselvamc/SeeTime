@@ -62,15 +62,21 @@ Given SeeTime's offline and no-backend constraints, finance features must rely o
 *   **No Backend Dependencies:** Features must be entirely self-contained within the app, with no reliance on external APIs, cloud services, or real-time synchronization.
 *   **Export/Backup Options:** Provide clear options for users to export their financial data (e.g., CSV, encrypted file) to their local device for personal backup and control.
 
-### Identified Finance Features & Justification:
-
-### UI/UX Integration Proposals for Finance Features:
-
-### Technical Feasibility & Data Storage Considerations:
+### Implementation Strategy for Onboarding & Finance:
+- **Onboarding:** Jetpack Compose `HorizontalPager` with custom animated page indicators, highlighting SeeTime's core pillars:
+  1. Multi-Timezone Glance & Overlap Visualizer.
+  2. Solar Azimuth & Camera Overlay.
+  3. Privacy-First Local Activity Tracking.
+- **Finance Hub (`FinanceScreen.kt`):**
+  - Offline Room tables: `ExpenseEntity`, `BudgetCategoryEntity`, `BillReminderEntity`.
+  - Monthly budget gauge widgets with Material 3 dynamic color indicators (Green -> Amber -> Red).
+  - Exact `AlarmManager` reminders for payment due dates without cloud sync.
 
 ---
 
 **Contributors:**
 - Dwight (Primary Scribe, UI/UX Lead)
-- Jim
-- Kelly
+- Jim (Technical Feasibility)
+- Kelly (Market Research & Product UX)
+- Hari (Engineering Lead)
+- Toby (QA & Specifications)

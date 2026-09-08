@@ -2,6 +2,8 @@
 
 package com.harichselvamc.seetime.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -166,50 +168,8 @@ private data class NavTab(
 )
 
 private val tabs = listOf(
-    NavTab("Home",      Icons.Filled.Home,              Icons.Outlined.Home),
+    NavTab("Reminders", Icons.Filled.Home,              Icons.Outlined.Home),
     NavTab("Overlap",   Icons.Outlined.GridOn,          Icons.Outlined.GridOn),
-    NavTab("Sidereal",  Icons.Filled.Stars,             Icons.Outlined.Stars),
-    NavTab("Countdown", Icons.Filled.RocketLaunch,      Icons.Outlined.RocketLaunch),
-    NavTab("Chronotype",Icons.Filled.Psychology,        Icons.Outlined.Psychology),
-    NavTab("Nautical",  Icons.Filled.Anchor,            Icons.Outlined.Anchor),
-    NavTab("LeapSec",   Icons.Filled.MoreTime,          Icons.Outlined.MoreTime),
-    NavTab("Atomic",    Icons.Filled.Memory,            Icons.Outlined.Memory),
-    NavTab("Chrono",    Icons.Filled.Timer,             Icons.Outlined.Timer),
-    NavTab("Prayer",    Icons.Filled.Mosque,            Icons.Outlined.Mosque),
-    NavTab("DateLine",  Icons.Filled.AirplanemodeActive,Icons.Outlined.AirplanemodeActive),
-    NavTab("Analemma",  Icons.Filled.HourglassTop,      Icons.Outlined.HourglassTop),
-    NavTab("DST",       Icons.Filled.EventRepeat,       Icons.Outlined.EventRepeat),
-    NavTab("Beats",     Icons.Filled.AlternateEmail,    Icons.Outlined.AlternateEmail),
-    NavTab("Morse",     Icons.Filled.FlashOn,           Icons.Outlined.FlashOn),
-    NavTab("Epoch",     Icons.Filled.AvTimer,           Icons.Outlined.AvTimer),
-    NavTab("Relativity",Icons.Filled.SatelliteAlt,      Icons.Outlined.SatelliteAlt),
-    NavTab("Map",       Icons.Filled.Map,               Icons.Outlined.Map),
-    NavTab("Voice",     Icons.Filled.RecordVoiceOver,   Icons.Outlined.RecordVoiceOver),
-    NavTab("Holidays",  Icons.Filled.Celebration,       Icons.Outlined.Celebration),
-    NavTab("Globe",     Icons.Filled.Public,            Icons.Outlined.Public),
-    NavTab("Vault",     Icons.Filled.AirplaneTicket,    Icons.Outlined.AirplaneTicket),
-    NavTab("Almanac",   Icons.Filled.WbSunny,           Icons.Outlined.WbSunny),
-    NavTab("SOS",       Icons.Filled.Emergency,         Icons.Outlined.Emergency),
-    NavTab("Golden",    Icons.Filled.CameraAlt,         Icons.Outlined.CameraAlt),
-    NavTab("Moon",      Icons.Filled.DarkMode,          Icons.Outlined.DarkMode),
-    NavTab("Scrubber",  Icons.Filled.Flight,            Icons.Outlined.Flight),
-    NavTab("Sleep",     Icons.Filled.Bedtime,           Icons.Outlined.Bedtime),
-    NavTab("Mixer",     Icons.Filled.GraphicEq,         Icons.Outlined.GraphicEq),
-    NavTab("Currency",  Icons.Filled.CurrencyExchange,  Icons.Outlined.CurrencyExchange),
-    NavTab("Finance",   Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet),
-    NavTab("DateTime",  Icons.Filled.CalendarMonth,     Icons.Outlined.CalendarMonth),
-    NavTab("Wall",      Icons.Filled.GridView,          Icons.Outlined.GridView),
-    NavTab("Orrery",    Icons.Filled.Public,            Icons.Outlined.Public),
-    NavTab("Itinerary", Icons.Filled.FlightTakeoff,     Icons.Outlined.FlightTakeoff),
-    NavTab("Chimes",    Icons.Filled.NotificationsActive, Icons.Outlined.NotificationsActive),
-    NavTab("Packing",   Icons.Filled.Luggage,           Icons.Outlined.Luggage),
-    NavTab("Alarms",    Icons.Filled.Notifications,     Icons.Outlined.NotificationsNone),
-    NavTab("Activity",  Icons.Outlined.List,            Icons.Outlined.List),
-    NavTab("Analytics", Icons.Filled.PieChart,          Icons.Outlined.PieChart),
-    NavTab("Twilight",  Icons.Filled.WbTwilight,        Icons.Outlined.WbTwilight),
-    NavTab("ISS",       Icons.Filled.SatelliteAlt,      Icons.Outlined.SatelliteAlt),
-    NavTab("Subsolar",  Icons.Filled.WbSunny,           Icons.Outlined.WbSunny),
-    NavTab("Insights",  Icons.Outlined.Analytics,       Icons.Outlined.Analytics),
     NavTab("Settings",  Icons.Filled.Settings,          Icons.Outlined.SettingsApplications)
 )
 
@@ -223,6 +183,7 @@ fun SeeTimeApp(
     onWhatsNewDismissed: () -> Unit = {}
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var activeHubScreen by rememberSaveable { mutableStateOf<String?>(null) }
     val timeOffset by viewModel.timeOffsetMinutes.collectAsState()
     val use24Hour  by viewModel.use24HourFormat.collectAsState()
     val showSecs   by viewModel.showSeconds.collectAsState()
@@ -263,6 +224,10 @@ fun SeeTimeApp(
     val isTabletOrExpanded = configuration.screenWidthDp >= 600
     val hapticFeedback = LocalHapticFeedback.current
 
+    BackHandler(enabled = activeHubScreen != null) {
+        activeHubScreen = null
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         if (isTabletOrExpanded) {
             // Adaptive Tablet / Foldable Landscape Layout with NavigationRail
@@ -283,6 +248,7 @@ fun SeeTimeApp(
                                 selected  = selected,
                                 onClick   = {
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    activeHubScreen = null
                                     selectedTab = index
                                 },
                                 icon = {
@@ -331,6 +297,11 @@ fun SeeTimeApp(
                     Box(modifier = Modifier.weight(1f)) {
                         MainTabContent(
                             selectedTab = selectedTab,
+                            activeHubScreen = activeHubScreen,
+                            onFeatureSelected = { featureKey ->
+                                activeHubScreen = featureKey
+                                selectedTab = 2
+                            },
                             viewModel = viewModel,
                             startWithAddDialog = startWithAddDialog,
                             onOpenTimeTravelSheet = { showTimeTravelSheet = true },
@@ -358,6 +329,11 @@ fun SeeTimeApp(
                 Box(modifier = Modifier.weight(1f)) {
                     MainTabContent(
                         selectedTab = selectedTab,
+                        activeHubScreen = activeHubScreen,
+                        onFeatureSelected = { featureKey ->
+                            activeHubScreen = featureKey
+                            selectedTab = 2
+                        },
                         viewModel = viewModel,
                         startWithAddDialog = startWithAddDialog,
                         onOpenTimeTravelSheet = { showTimeTravelSheet = true },
@@ -376,6 +352,7 @@ fun SeeTimeApp(
                             selected  = selected,
                             onClick   = {
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                activeHubScreen = null
                                 selectedTab = index
                             },
                             icon = {
@@ -425,6 +402,8 @@ fun SeeTimeApp(
 @Composable
 private fun MainTabContent(
     selectedTab: Int,
+    activeHubScreen: String?,
+    onFeatureSelected: (String) -> Unit,
     viewModel: TimeViewModel,
     startWithAddDialog: Boolean,
     onOpenTimeTravelSheet: () -> Unit,
@@ -465,53 +444,16 @@ private fun MainTabContent(
                 onOpenTimeTravelSheet = onOpenTimeTravelSheet
             )
             1 -> MeetingOverlapScreen(viewModel = viewModel)
-            2 -> SiderealTimeScreen(viewModel = viewModel)
-            3 -> EventCountdownScreen(viewModel = viewModel)
-            4 -> ChronotypeOptimizerScreen(viewModel = viewModel)
-            5 -> NauticalBellScreen(viewModel = viewModel)
-            6 -> LeapSecondScreen(viewModel = viewModel)
-            7 -> AtomicClockScreen(viewModel = viewModel)
-            8 -> PrecisionStopwatchScreen(viewModel = viewModel)
-            9 -> PrayerTimesScreen(viewModel = viewModel)
-            10 -> DateLineScreen(viewModel = viewModel)
-            11 -> AnalemmaScreen(viewModel = viewModel)
-            12 -> DstTransitionScreen(viewModel = viewModel)
-            13 -> SwatchTimeScreen(viewModel = viewModel)
-            14 -> MorseTimeScreen(viewModel = viewModel)
-            15 -> EpochConverterScreen(viewModel = viewModel)
-            16 -> RelativisticClockScreen(viewModel = viewModel)
-            17 -> WorldMapScreen(viewModel = viewModel)
-            18 -> VoiceAnnouncerScreen(viewModel = viewModel)
-            19 -> HolidayCalendarScreen(viewModel = viewModel)
-            20 -> GlobeScreen(viewModel = viewModel)
-            21 -> TravelVaultScreen(viewModel = viewModel)
-            22 -> SolarAlmanacScreen(viewModel = viewModel)
-            23 -> EmergencyDirectoryScreen(viewModel = viewModel)
-            24 -> GoldenHourPlannerScreen(viewModel = viewModel)
-            25 -> MoonPhaseScreen(viewModel = viewModel)
-            26 -> FlightTimezoneScrubberScreen(viewModel = viewModel)
-            27 -> CircadianSleepScreen(viewModel = viewModel)
-            28 -> SoundscapeMixerScreen(viewModel = viewModel)
-            29 -> CurrencyConverterScreen(viewModel = viewModel)
-            30 -> OfflineFinanceScreen(viewModel = viewModel)
-            31 -> DateTimeCalculatorScreen(viewModel = viewModel)
-            32 -> WorldTimeWallScreen(viewModel = viewModel)
-            33 -> SolarOrreryScreen(viewModel = viewModel)
-            34 -> TripTimelineScreen(viewModel = viewModel)
-            35 -> ClockChimeScreen(viewModel = viewModel)
-            36 -> TravelChecklistScreen(viewModel = viewModel)
-            37 -> RemindersScreen(viewModel = viewModel)
-            38 -> ActivityReviewScreen(viewModel = viewModel)
-            39 -> TimeAnalyticsScreen(viewModel = viewModel)
-            40 -> TwilightHorizonScreen(viewModel = viewModel)
-            41 -> IssPassScreen(viewModel = viewModel)
-            42 -> SubsolarScreen(viewModel = viewModel)
-            43 -> InsightsScreen(viewModel = viewModel)
-            44 -> SettingsScreen(
+            2 -> SettingsScreen(
                 use24HourFormat     = use24Hour,
                 onToggle24HourFormat = viewModel::setUse24HourFormat,
                 showSeconds          = showSecs,
                 onToggleShowSeconds  = viewModel::setShowSeconds
+            )
+            else -> HomeScreen(
+                viewModel = viewModel,
+                startWithAddDialog = startWithAddDialog,
+                onOpenTimeTravelSheet = onOpenTimeTravelSheet
             )
         }
     }

@@ -90,15 +90,34 @@ Based on my market research, here are initial thoughts on integrating essential 
     *   **Justification:** While crucial for transparency and reinforcing SeeTime's privacy-centric approach, this feature is primarily about user control and communication around an *already existing* core principle (offline functionality). The fundamental offline operation should be in place first, and then the explicit configuration and communication can be refined. It builds trust but isn't a primary daily-use feature that directly tracks or manages time itself.
 
 ### Detailed Design Specifications:
-*(For each prioritized feature/improvement, detail the design specifications here. Include specific UI elements, interactions, animations, and how they align with Material 3 guidelines.)*
 
-### Analysis of Missing Features in Existing Apps:
-*(Jim, Kelly, please contribute here. Let's identify features present in other time management or productivity apps that SeeTime currently lacks but could significantly benefit from. Consider unique approaches given SeeTime's offline and privacy-focused nature.)*
+1. **Manual Time Entry Component (`AddActivityDialog.kt`):**
+   - **Dialog Shell:** Material 3 `AlertDialog` with `tonalElevation = 6.dp` and rounded corners (`28.dp`).
+   - **Form Controls:**
+     - Activity Name / Label (`OutlinedTextField` with clear trailing icon).
+     - Start Time & End Time input selectors (`TimeInput` / M3 TimePicker integration).
+     - Category Selector Dropdown (`Work`, `Personal`, `Health`, `Focus`, `Travel`).
+     - Notes field for contextual details.
+   - **Validation:** Automatic check ensuring `endTime >= startTime` with inline error messages.
 
+2. **Activity Review & Timeline (`ActivityReviewScreen.kt`):**
+   - **Top App Bar:** Medium TopAppBar displaying total tracked duration for the selected day.
+   - **Activity Cards (`ActivityCard.kt`):**
+     - M3 `ElevatedCard` featuring colored category accent indicator pills.
+     - Formatted time span (e.g., `09:30 AM - 11:00 AM (1h 30m)`).
+     - Action icons for quick edit and swipe-to-delete with confirmation snackbar.
+   - **Navigation Integration:** Added `Activities` tab (`NavTab.Activities`) in `SeeTimeApp.kt` bottom navigation bar with animated content transitions.
+
+### Analysis of Missing Features in Existing Apps & Opportunities for SeeTime:
+- **Zero-Cloud Personal Insights:** Most competitors (Toggl, Clockify) mandate account creation and cloud syncing. SeeTime stands out by offering rich analytics with 100% on-device SQLite storage and privacy.
+- **Solar & Timezone Context:** No major time tracking app pairs solar azimuth/sun position directly with activity logging and cross-timezone collaboration.
+- **Micro-Friction Time Logging:** Introducing one-tap quick log presets directly from the home screen FAB and future App Widgets.
 
 ---
 
 **Contributors:**
 - Dwight (Primary Scribe, UI/UX Lead)
-- Jim
-- Kelly
+- Jim (Architecture & Technical Feasibility)
+- Kelly (Market Research & UI/UX Contributor)
+- Hari (Engineering Lead)
+- Toby (QA & Specifications)

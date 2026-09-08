@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -158,7 +159,7 @@ fun OnboardingScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Filled.Schedule,
+                                    imageVector = Icons.Filled.Schedule,
                                     contentDescription = "SeeTime Logo",
                                     tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(60.dp)

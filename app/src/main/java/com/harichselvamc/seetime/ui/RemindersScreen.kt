@@ -161,6 +161,9 @@ fun RemindersScreen(
     }
 
     val homePairs = viewModel?.state?.collectAsState()?.value?.pairs ?: emptyList()
+    val enabledCount = alarms.count { it.isEnabled }
+    val nextAlarm = alarms.filter { it.isEnabled }.minByOrNull { it.firesAt }
+    val nextAlarmLabel = nextAlarm?.let { "Next: ${it.targetTime} • ${shortZone(it.zone)}" } ?: "No active reminders"
 
     androidx.compose.material3.Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -169,10 +172,10 @@ fun RemindersScreen(
                 onClick = remember { { showAddDialog = true } },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(18.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -180,7 +183,7 @@ fun RemindersScreen(
                         contentDescription = "Add Smart Alarm"
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add Alarm", fontWeight = FontWeight.Bold)
+                    Text("New", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -190,42 +193,77 @@ fun RemindersScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // ── Page Header (Samsung Clock Style with Add Action) ──
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 1.dp
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Smart Alarms",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        "Exact target timezone alarms & meeting alerts",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Surface(
-                    onClick = remember { { showAddDialog = true } },
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 18.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.AddAlarm,
-                        contentDescription = "Add Alarm",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(10.dp)
-                            .size(24.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "My Reminders",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                nextAlarmLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Surface(
+                            onClick = remember { { showAddDialog = true } },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+                            tonalElevation = 0.dp
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.AddAlarm,
+                                contentDescription = "Add Alarm",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .size(22.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        ReminderStatCard(
+                            label = "Active",
+                            value = enabledCount.toString(),
+                            accent = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ReminderStatCard(
+                            label = "Zones",
+                            value = alarms.map { it.zone }.distinct().size.toString(),
+                            accent = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ReminderStatCard(
+                            label = "Focus",
+                            value = if (enabledCount > 0) "On" else "Off",
+                            accent = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
 
@@ -300,7 +338,7 @@ fun RemindersScreen(
                         top = 16.dp,
                         bottom = 120.dp
                     ),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(alarms, key = { it.id }) { alarm ->
                         SamsungAlarmCard(
@@ -367,6 +405,38 @@ fun RemindersScreen(
     }
 }
 
+@Composable
+private fun ReminderStatCard(
+    label: String,
+    value: String,
+    accent: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+        tonalElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = accent
+            )
+        }
+    }
+}
+
 // ── Samsung Clock Inspired Alarm Card ─────────────────────────────────
 
 @Composable
@@ -419,16 +489,16 @@ private fun SamsungAlarmCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(18.dp)
         ) {
             // Header Row: Large Time + Toggle Switch
             Row(

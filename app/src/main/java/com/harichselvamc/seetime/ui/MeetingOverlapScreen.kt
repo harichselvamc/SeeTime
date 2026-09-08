@@ -140,26 +140,55 @@ fun MeetingOverlapScreen(
                         )
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            text = "Meeting Overlap Matrix",
+                            text = "Meeting Overlap",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
+                }
 
-                    // Scrubber Switch Chip
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     FilterChip(
-                        selected = false,
-                        onClick = { selectedViewMode = 1 },
-                        label = { Text("Flight Scrubber ✈") },
+                        selected = selectedViewMode == 0,
+                        onClick = { selectedViewMode = 0 },
+                        label = { Text("Overlap Matrix") },
+                        leadingIcon = if (selectedViewMode == 0) null else {
+                            { Icon(Icons.Outlined.GridOn, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        },
                         colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+
+                    FilterChip(
+                        selected = selectedViewMode == 1,
+                        onClick = { selectedViewMode = 1 },
+                        label = { Text("Flight Scrubber") },
+                        leadingIcon = if (selectedViewMode == 1) null else {
+                            { Icon(Icons.Outlined.WbSunny, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "24-hour visual interactive overlap grid across working hours (9 AM – 5 PM)",
+                    text = "24-hour visual overlap grid across working hours (9 AM – 5 PM)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -217,38 +246,49 @@ fun MeetingOverlapScreen(
                     if (ui != null) {
                         item { // Wrap all ui-dependent content in a single item
                             Column {
-                                // Time pair filter selector chips
                                 if (state.pairs.size > 1) {
-                                    Text(
-                                        "Select Time Pair",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(Modifier.height(6.dp))
-                                    LazyRow(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier.padding(bottom = 6.dp) // Add padding to separate from next card
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                                     ) {
-                                        items(state.pairs.size) { idx ->
-                                            val pair = state.pairs[idx]
-                                            val isSelected = idx == selectedPairIndex
-                                            FilterChip(
-                                                selected = isSelected,
-                                                onClick = { selectedPairIndex = idx },
-                                                label = {
-                                                    Text(
-                                                        if (pair.label.isNotBlank()) pair.label
-                                                        else "${shortZone(pair.fromZone)} → ${shortZone(pair.toZone)}"
-                                                    )
-                                                },
-                                                colors = FilterChipDefaults.filterChipColors(
-                                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                                )
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Text(
+                                                "Time pair",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
+                                            Spacer(Modifier.height(8.dp))
+                                            LazyRow(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                items(state.pairs.size) { idx ->
+                                                    val pair = state.pairs[idx]
+                                                    val isSelected = idx == selectedPairIndex
+                                                    FilterChip(
+                                                        selected = isSelected,
+                                                        onClick = { selectedPairIndex = idx },
+                                                        label = {
+                                                            Text(
+                                                                if (pair.label.isNotBlank()) pair.label
+                                                                else "${shortZone(pair.fromZone)} → ${shortZone(pair.toZone)}"
+                                                            )
+                                                        },
+                                                        colors = FilterChipDefaults.filterChipColors(
+                                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
+                                    Spacer(Modifier.height(16.dp))
                                 }
 
                                 val matrix = remember(ui.offsetDifferenceMinutes) {
